@@ -69,4 +69,6 @@ export const aiService = {
     api.post('/ai/categorize', { description, amount }).then(r => r.data),
   insights: ()  => api.get<FinancialInsight[]>('/ai/insights').then(r => r.data),
   predict:  ()  => api.get('/ai/predict').then(r => r.data),
+  chat:     (message: string) =>
+    api.post<{ response: string }>('/ai/chat', { message }).then(r => r.data),
 };

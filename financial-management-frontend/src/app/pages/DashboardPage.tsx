@@ -6,6 +6,7 @@ import {
 import { Wallet, TrendingUp, TrendingDown, DollarSign, AlertTriangle } from 'lucide-react';
 import { reportsService, aiService } from '../services/finance.service';
 import { StatCard } from '../components/StatCard';
+import { ExpensePredictionCard } from '../components/ExpensePredictionCard';
 
 const fmtBRL = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -13,6 +14,7 @@ export default function DashboardPage() {
   const { data: summary, isLoading } = useQuery({ queryKey: ['dashboard'], queryFn: reportsService.dashboard });
   const { data: cashFlow }           = useQuery({ queryKey: ['cashflow'], queryFn: () => reportsService.cashFlow({}) });
   const { data: insights }           = useQuery({ queryKey: ['insights'], queryFn: aiService.insights });
+  const { data: prediction, isLoading: isPredictionLoading } = useQuery({ queryKey: ['prediction'], queryFn: aiService.predict });
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64 text-slate-400">Carregando...</div>;
@@ -134,6 +136,9 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Expense Prediction */}
+      <ExpensePredictionCard data={prediction} isLoading={isPredictionLoading} />
     </div>
   );
 }
