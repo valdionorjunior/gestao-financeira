@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Design System – Gestão Financeira (Soft UI Dashboard)
+   ============================================================ */
+@theme {
+  --color-primary:   #cb0c9f;
+  --color-secondary: #8392ab;
+  --color-success:   #82d616;
+  --color-danger:    #ea0606;
+  --color-warning:   #fbcf33;
+  --color-info:      #17c1e8;
+  --color-dark:      #344767;
+  --color-light:     #ced4da;
+
+  --font-family-sans: 'Open Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  background-color: #f8f9fa;
+  color: #344767;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  text-align: left;
+}
+
+

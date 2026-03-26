@@ -1,0 +1,143 @@
+version: '3.9'
+
+services:
+  # ─────────────────────────────────────────────
+  # PostgreSQL
+  # ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: fm_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-financial_management}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./financial-management-backend/migrations/init:/docker-entrypoint-initdb.d
+    networks:
+      - fm_network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-financial_management}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Redis
+  # ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: fm_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis}
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - fm_network
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-redis}', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # pgAdmin
+  # ─────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: fm_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@gestaofinanceira.com
+      PGADMIN_DEFAULT_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - '5050:80'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fm_network
+    profiles:
+      - tools
+
+  # ─────────────────────────────────────────────
+  # Flyway Migrations
+  # ─────────────────────────────────────────────
+  flyway:
+    image: flyway/flyway:10-alpine
+    container_name: fm_flyway
+    command: -url=jdbc:postgresql://postgres:5432/${DB_NAME:-financial_management} -user=${DB_USER:-postgres} -password=${DB_PASSWORD:-postgres} -locations=filesystem:/flyway/sql migrate
+    volumes:
+      - ./financial-management-backend/migrations:/flyway/sql:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fm_network
+    profiles:
+      - migrate
+
+  # ─────────────────────────────────────────────
+  # Backend (NestJS)
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ./financial-management-backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: fm_backend
+    restart: unless-stopped
+    env_file:
+      - ./financial-management-backend/.env
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+    ports:
+      - '${API_PORT:-3000}:3000'
+    volumes:
+      - ./financial-management-backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - fm_network
+    command: npm run start:dev
+
+  # ─────────────────────────────────────────────
+  # Frontend (React/Vite)
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./financial-management-frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: fm_frontend
+    restart: unless-stopped
+    env_file:
+      - ./financial-management-frontend/.env
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./financial-management-frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - fm_network
+    command: npm run dev -- --host
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  fm_network:
+    driver: bridge
