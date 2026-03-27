@@ -69,7 +69,18 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "runner": "vitest",
-            "tsConfig": "tsconfig.spec.json"
+            "tsConfig": "tsconfig.spec.json",
+            "coverage": false,
+            "coverageExclude": [
+              "src/app/features/dashboard/dashboard.ts",
+              "src/app/core/interceptors/error.interceptor.ts"
+            ],
+            "coverageThresholds": {
+              "statements": 75,
+              "branches": 70,
+              "functions": 60,
+              "lines": 75
+            }
           }
         }
       }

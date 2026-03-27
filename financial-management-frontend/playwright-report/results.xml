@@ -1,0 +1,12 @@
+<testsuites id="" name="" tests="4" failures="0" skipped="0" errors="0" time="4.095903">
+<testsuite name="visual/visual.spec.ts" timestamp="2026-03-27T15:16:27.648Z" hostname="chromium" tests="4" failures="0" skipped="0" time="5.456" errors="0">
+<testcase name="Visual Regression – Login page › login page matches snapshot (light)" classname="visual/visual.spec.ts" time="1.394">
+</testcase>
+<testcase name="Visual Regression – Login page › login page matches snapshot (dark)" classname="visual/visual.spec.ts" time="1.396">
+</testcase>
+<testcase name="Visual Regression – Register page › register page matches snapshot" classname="visual/visual.spec.ts" time="1.372">
+</testcase>
+<testcase name="Visual Regression – Login validation state › shows validation errors snapshot" classname="visual/visual.spec.ts" time="1.294">
+</testcase>
+</testsuite>
+</testsuites>

@@ -1,0 +1,12 @@
+<testsuites id="" name="" tests="4" failures="0" skipped="0" errors="0" time="7.029172000000001">
+<testsuite name="visual/visual.spec.ts" timestamp="2026-03-27T15:18:26.847Z" hostname="chromium" tests="4" failures="0" skipped="0" time="6.999" errors="0">
+<testcase name="Regressão visual – Login (Angular) › login page snapshot (light)" classname="visual/visual.spec.ts" time="1.802">
+</testcase>
+<testcase name="Regressão visual – Login (Angular) › login page snapshot (dark)" classname="visual/visual.spec.ts" time="1.871">
+</testcase>
+<testcase name="Regressão visual – Register (Angular) › register page snapshot (light)" classname="visual/visual.spec.ts" time="1.939">
+</testcase>
+<testcase name="Regressão visual – Estado de validação › login com campos tocados mostra erros de validação" classname="visual/visual.spec.ts" time="1.387">
+</testcase>
+</testsuite>
+</testsuites>

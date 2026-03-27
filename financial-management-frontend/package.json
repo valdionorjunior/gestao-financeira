@@ -10,7 +10,17 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:cov": "vitest run --coverage"
+    "test:unit": "vitest run --reporter=verbose src/test/unit",
+    "test:integration": "vitest run --reporter=verbose src/test/integration",
+    "test:cov": "vitest run --coverage",
+    "test:cov:threshold": "vitest run --coverage --coverage.thresholds.statements=85 --coverage.thresholds.branches=80 --coverage.thresholds.functions=85 --coverage.thresholds.lines=85",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:all": "playwright test",
+    "test:e2e:visual": "playwright test --project=visual",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:update-snapshots": "playwright test --update-snapshots --project=visual",
+    "playwright:install": "playwright install --with-deps"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -29,6 +39,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/vite": "^4.2.2",
     "@testing-library/jest-dom": "^6.9.1",
