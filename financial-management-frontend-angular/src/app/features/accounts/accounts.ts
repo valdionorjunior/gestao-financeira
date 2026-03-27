@@ -42,32 +42,39 @@ const TYPE_ICON: Record<string, string> = {
   template: `
     <div class="page-container">
       <div class="page-header">
-        <h1>Contas</h1>
+        <div>
+          <h1>Contas</h1>
+          <p class="page-subtitle">Gerencie suas contas bancárias e carteiras</p>
+        </div>
         <p-button label="Nova Conta" icon="pi pi-plus" (onClick)="openDialog()" />
       </div>
 
       @if (loading()) {
         <div class="cards-grid">
-          @for (i of [1,2,3]; track i) { <p-skeleton height="140px" borderRadius="0.75rem" /> }
+          @for (i of [1,2,3]; track i) { <p-skeleton height="160px" borderRadius="1.25rem" /> }
         </div>
       } @else if (accounts().length === 0) {
-        <div class="py-16 text-center">
-          <i class="pi pi-wallet text-4xl text-[var(--text-color-secondary)] mb-3 block"></i>
-          <p class="text-[var(--text-color-secondary)]">Nenhuma conta cadastrada</p>
-          <p-button label="Adicionar conta" class="mt-4" (onClick)="openDialog()" />
+        <div class="empty-hero">
+          <div class="empty-icon-circle">
+            <i class="pi pi-wallet"></i>
+          </div>
+          <p class="empty-title">Nenhuma conta cadastrada</p>
+          <p class="empty-desc">Adicione sua primeira conta para começar a gerenciar suas finanças</p>
+          <p-button label="Adicionar conta" icon="pi pi-plus" (onClick)="openDialog()" />
         </div>
       } @else {
         <div class="cards-grid">
           @for (acc of accounts(); track acc.id) {
-            <div class="card" style="display:flex; flex-direction:column; gap:0.75rem;">
+            <div class="account-card">
+              <div class="account-card-bar" [class]="'bar-' + acc.type.toLowerCase()"></div>
               <div class="flex items-start justify-between">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:rgba(139,92,246,0.1);">
-                    <i [class]="'pi ' + typeIcon(acc.type)" style="color:var(--primary)"></i>
+                  <div class="account-icon" [class]="'icon-' + acc.type.toLowerCase()">
+                    <i [class]="'pi ' + typeIcon(acc.type)"></i>
                   </div>
                   <div>
-                    <p class="font-semibold text-[var(--text-color)]">{{ acc.name }}</p>
-                    <p class="text-xs text-[var(--text-color-secondary)]">{{ acc.type | accountType }}</p>
+                    <p class="font-semibold text-[var(--text-primary)]">{{ acc.name }}</p>
+                    <p class="text-xs text-[var(--text-secondary)]">{{ acc.type | accountType }}</p>
                   </div>
                 </div>
                 <div class="flex gap-1">
@@ -75,14 +82,14 @@ const TYPE_ICON: Record<string, string> = {
                   <p-button icon="pi pi-trash" [text]="true" size="small" severity="danger" (onClick)="confirmDelete(acc)" />
                 </div>
               </div>
-              <div>
-                <p class="text-xs text-[var(--text-color-secondary)]">Saldo</p>
-                <p class="text-xl font-bold" [class]="acc.balance >= 0 ? 'text-emerald-500' : 'text-red-500'">
+              <div class="account-balance-section">
+                <p class="text-xs text-[var(--text-secondary)]">Saldo</p>
+                <p class="account-balance" [class]="acc.balance >= 0 ? 'positive' : 'negative'">
                   {{ acc.balance | currency:'BRL':'symbol':'1.2-2' }}
                 </p>
               </div>
               @if (acc.bankName) {
-                <p class="text-xs text-[var(--text-color-secondary)]">
+                <p class="text-xs text-[var(--text-secondary)]">
                   <i class="pi pi-building mr-1"></i>{{ acc.bankName }}
                 </p>
               }
@@ -125,6 +132,116 @@ const TYPE_ICON: Record<string, string> = {
 
     <p-confirmDialog />
   `,
+  styles: [`
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      font-weight: 400;
+    }
+    .empty-hero {
+      text-align: center;
+      padding: 4rem 1rem;
+      animation: fadeInUp 0.5s ease-out;
+    }
+    .empty-icon-circle {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(0, 212, 170, 0.08));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .empty-icon-circle i {
+      font-size: 2rem;
+      color: var(--primary-500, #6C5CE7);
+    }
+    .empty-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+    .empty-desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+    .account-card {
+      background: var(--surface-card, #fff);
+      border-radius: var(--radius-xl, 24px);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--surface-border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .account-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl, 0 12px 32px rgba(108, 92, 231, 0.18));
+    }
+    .account-card-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+    .bar-checking     { background: var(--gradient-primary); }
+    .bar-savings      { background: var(--gradient-secondary); }
+    .bar-investment   { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
+    .bar-credit_card  { background: var(--gradient-accent); }
+    .bar-cash         { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
+    .bar-digital_wallet { background: linear-gradient(135deg, #6C5CE7, #00D4AA); }
+    .account-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-lg, 20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.125rem;
+      transition: transform 0.2s;
+    }
+    .account-icon:hover { transform: scale(1.08) rotate(5deg); }
+    .icon-checking     { background: rgba(108, 92, 231, 0.1); color: #6C5CE7; }
+    .icon-savings      { background: rgba(0, 212, 170, 0.1); color: #00D4AA; }
+    .icon-investment   { background: rgba(59, 130, 246, 0.1); color: #3B82F6; }
+    .icon-credit_card  { background: rgba(255, 107, 107, 0.1); color: #FF6B6B; }
+    .icon-cash         { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
+    .icon-digital_wallet { background: rgba(108, 92, 231, 0.1); color: #6C5CE7; }
+    .account-balance-section {
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--surface-border, rgba(108, 92, 231, 0.08));
+    }
+    .account-balance {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+    .account-balance.positive {
+      background: var(--gradient-secondary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .account-balance.negative { color: var(--accent-500, #FF6B6B); }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 768px) {
+      .account-card { padding: 1.25rem; }
+      .account-balance { font-size: 1.25rem; }
+    }
+  `],
 })
 export class AccountsComponent implements OnInit {
   private finance = inject(FinanceService);

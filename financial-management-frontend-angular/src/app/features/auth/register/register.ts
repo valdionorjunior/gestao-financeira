@@ -15,13 +15,13 @@ import { MessageModule } from 'primeng/message';
   template: `
     <!-- Soft UI Dashboard: gradient full-screen background -->
     <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
-         style="background: linear-gradient(135deg, #635BFF 0%, #5B8DEF 50%, #00E5E5 100%)">
+         style="background: linear-gradient(135deg, #6C5CE7 0%, #9A8CFF 50%, #00D4AA 100%)">
 
       <!-- decorative blobs -->
       <div class="absolute top-[-10%] left-[-5%] w-80 h-80 rounded-full opacity-15"
            style="background: radial-gradient(circle, #fff 0%, transparent 70%)"></div>
       <div class="absolute bottom-[-15%] right-[-8%] w-96 h-96 rounded-full opacity-15"
-           style="background: radial-gradient(circle, #00E5E5 0%, transparent 70%)"></div>
+           style="background: radial-gradient(circle, #00D4AA 0%, transparent 70%)"></div>
 
       <div class="w-full max-w-md animate-fade-in-up relative z-10">
 
@@ -30,8 +30,8 @@ import { MessageModule } from 'primeng/message';
 
           <!-- Logo badge + title -->
           <div class="flex flex-col items-center mb-8">
-            <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-[0_8px_24px_rgba(99,91,255,0.45)]"
-                 style="background: linear-gradient(135deg, #635BFF 0%, #00E5E5 100%)">
+            <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-[0_8px_24px_rgba(108,92,231,0.45)]"
+                 style="background: linear-gradient(135deg, #6C5CE7 0%, #00D4AA 100%)">
               <i class="pi pi-wallet text-white text-2xl"></i>
             </div>
             <h1 class="text-2xl font-bold text-[var(--color-text)]">Criar conta</h1>
@@ -87,8 +87,8 @@ import { MessageModule } from 'primeng/message';
             <button
               type="submit"
               [disabled]="form.invalid || loading()"
-              class="w-full mt-1 py-3 px-6 rounded-xl text-white font-semibold text-sm shadow-[0_4px_15px_rgba(99,91,255,0.4)] hover:shadow-[0_8px_24px_rgba(99,91,255,0.5)] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-              style="background: linear-gradient(135deg, #635BFF 0%, #5B8DEF 100%)"
+              class="w-full mt-1 py-3 px-6 rounded-xl text-white font-semibold text-sm shadow-[0_4px_15px_rgba(108,92,231,0.4)] hover:shadow-[0_8px_24px_rgba(108,92,231,0.5)] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              style="background: linear-gradient(135deg, #6C5CE7 0%, #9A8CFF 100%)"
             >
               @if (loading()) {
                 <i class="pi pi-spinner pi-spin mr-2"></i>

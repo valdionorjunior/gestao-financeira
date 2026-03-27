@@ -40,12 +40,18 @@ const TX_STATUSES = [
   template: `
     <div class="page-container">
       <div class="page-header">
-        <h1>Transações</h1>
-        <p-button label="Nova Transação" icon="pi pi-plus" (onClick)="openDialog()" />
+        <div>
+          <h1>Transações</h1>
+          <p class="page-subtitle">Gerencie suas receitas, despesas e transferências</p>
+        </div>
+        <p-button label="Nova Transação" icon="pi pi-plus" (onClick)="openDialog()" styleClass="btn-glow" />
       </div>
 
       <!-- Filters -->
-      <div class="card" style="padding:1.25rem; display:flex; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.5rem;">
+      <div class="card filter-bar">
+        <div class="filter-icon">
+          <i class="pi pi-filter"></i>
+        </div>
         <p-select
           [options]="txTypes"
           optionLabel="label"
@@ -79,7 +85,7 @@ const TX_STATUSES = [
       </div>
 
       <!-- Table -->
-      <div class="card" style="padding:0; overflow:hidden;">
+      <div class="card table-card">
         <p-table
           [value]="transactions()"
           [loading]="loading()"
@@ -203,6 +209,43 @@ const TX_STATUSES = [
 
     <p-confirmDialog />
   `,
+  styles: [`
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      font-weight: 400;
+    }
+    .filter-bar {
+      padding: 1.25rem !important;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+    .filter-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md, 16px);
+      background: rgba(108, 92, 231, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-500, #6C5CE7);
+      flex-shrink: 0;
+    }
+    .table-card {
+      padding: 0 !important;
+      overflow: hidden;
+    }
+    @media (max-width: 1024px) {
+      .filter-bar { flex-wrap: wrap; }
+    }
+    @media (max-width: 768px) {
+      .filter-bar { flex-direction: column; }
+    }
+  `],
 })
 export class TransactionsComponent implements OnInit {
   private finance = inject(FinanceService);

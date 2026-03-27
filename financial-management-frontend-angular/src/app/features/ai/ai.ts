@@ -28,9 +28,20 @@ const SUGGESTIONS = [
     <div class="page-container" style="display:flex; flex-direction:column; height:calc(100vh - var(--topbar-height) - 4rem); max-height:calc(100vh - var(--topbar-height) - 4rem);">
 
       <!-- Header -->
-      <div style="margin-bottom:1.5rem; animation: slideDown var(--transition-base);">
-        <h1 style="font-size:1.875rem; font-weight:700; background:var(--primary-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:-0.5px;">Assistente IA</h1>
-        <p style="font-size:0.875rem; color:var(--text-color-secondary); margin-top:0.25rem;">Pergunte sobre suas finanças e receba insights personalizados</p>
+      <div class="ai-header">
+        <div class="ai-header-content">
+          <div class="ai-icon-circle">
+            <i class="pi pi-sparkles"></i>
+          </div>
+          <div>
+            <h1 class="ai-title">Assistente IA</h1>
+            <p class="ai-desc">Pergunte sobre suas finanças e receba insights personalizados</p>
+          </div>
+        </div>
+        <div class="ai-badge">
+          <i class="pi pi-bolt"></i>
+          <span>Beta</span>
+        </div>
       </div>
 
       <!-- Chat area -->
@@ -121,6 +132,71 @@ const SUGGESTIONS = [
       </div>
     </div>
   `,
+  styles: [`
+    .ai-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      animation: slideDown 0.25s ease;
+    }
+    .ai-header-content {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .ai-icon-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-xl, 24px);
+      background: var(--gradient-primary, linear-gradient(135deg, #6C5CE7, #9A8CFF));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.25rem;
+      box-shadow: var(--shadow-glow, 0 0 20px rgba(108, 92, 231, 0.4));
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+    .ai-title {
+      font-size: 1.875rem;
+      font-weight: 700;
+      background: var(--gradient-primary, linear-gradient(135deg, #6C5CE7, #9A8CFF));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+    }
+    .ai-desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary, #636E72);
+      margin-top: 0.125rem;
+    }
+    .ai-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.875rem;
+      border-radius: var(--radius-full, 9999px);
+      background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(0, 212, 170, 0.08));
+      border: 1px solid rgba(108, 92, 231, 0.2);
+      color: var(--primary-500, #6C5CE7);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 4px 16px rgba(108, 92, 231, 0.12); }
+      50% { box-shadow: 0 0 20px rgba(108, 92, 231, 0.4); }
+    }
+    @media (max-width: 768px) {
+      :host ::ng-deep .ai-header { flex-direction: column; text-align: center; gap: 1rem; }
+      :host ::ng-deep .chat-container { height: calc(100vh - var(--topbar-height) - 8rem); }
+    }
+  `],
 })
 export class AiComponent {
   auth    = inject(AuthService);

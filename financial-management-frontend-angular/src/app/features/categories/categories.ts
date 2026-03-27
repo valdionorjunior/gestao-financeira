@@ -25,18 +25,25 @@ import { ColorPickerModule } from 'primeng/colorpicker';
   template: `
     <div class="page-container">
       <div class="page-header">
-        <h1>Categorias</h1>
+        <div>
+          <h1>Categorias</h1>
+          <p class="page-subtitle">Organize suas transações por categorias e subcategorias</p>
+        </div>
         <p-button label="Nova Categoria" icon="pi pi-plus" (onClick)="openCatDialog()" />
       </div>
 
       @if (loading()) {
         <div style="display:flex; flex-direction:column; gap:0.75rem;">
-          @for (i of [1,2,3,4]; track i) { <p-skeleton height="60px" borderRadius="0.5rem" /> }
+          @for (i of [1,2,3,4]; track i) { <p-skeleton height="60px" borderRadius="0.75rem" /> }
         </div>
       } @else if (categories().length === 0) {
-        <div class="py-16 text-center">
-          <i class="pi pi-tag text-4xl text-[var(--text-color-secondary)] mb-3 block"></i>
-          <p class="text-[var(--text-color-secondary)]">Nenhuma categoria cadastrada</p>
+        <div class="empty-hero">
+          <div class="empty-icon-circle">
+            <i class="pi pi-tag"></i>
+          </div>
+          <p class="empty-title">Nenhuma categoria cadastrada</p>
+          <p class="empty-desc">Crie categorias para organizar suas transações</p>
+          <p-button label="Nova Categoria" icon="pi pi-plus" (onClick)="openCatDialog()" />
         </div>
       } @else {
         <p-accordion [multiple]="true">
@@ -131,6 +138,43 @@ import { ColorPickerModule } from 'primeng/colorpicker';
 
     <p-confirmDialog />
   `,
+  styles: [`
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      font-weight: 400;
+    }
+    .empty-hero {
+      text-align: center;
+      padding: 4rem 1rem;
+    }
+    .empty-icon-circle {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(0, 212, 170, 0.08));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .empty-icon-circle i {
+      font-size: 2rem;
+      color: var(--primary-500, #6C5CE7);
+    }
+    .empty-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+    .empty-desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+  `],
 })
 export class CategoriesComponent implements OnInit {
   private finance = inject(FinanceService);
@@ -147,7 +191,7 @@ export class CategoriesComponent implements OnInit {
 
   catForm = this.fb.group({
     name:  ['', Validators.required],
-    color: ['#635BFF'],
+    color: ['#6C5CE7'],
   });
   subForm = this.fb.group({ name: ['', Validators.required] });
 
@@ -163,7 +207,7 @@ export class CategoriesComponent implements OnInit {
 
   openCatDialog(cat?: Category) {
     this.editCatId.set(cat?.id ?? null);
-    this.catForm.patchValue({ name: cat?.name ?? '', color: cat?.color ?? '#635BFF' });
+    this.catForm.patchValue({ name: cat?.name ?? '', color: cat?.color ?? '#6C5CE7' });
     this.catDialogVisible = true;
   }
 

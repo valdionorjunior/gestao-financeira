@@ -34,18 +34,25 @@ const PERIODS = [
   template: `
     <div class="page-container">
       <div class="page-header">
-        <h1>Orçamentos</h1>
+        <div>
+          <h1>Orçamentos</h1>
+          <p class="page-subtitle">Defina limites de gastos por categoria e acompanhe em tempo real</p>
+        </div>
         <p-button label="Novo Orçamento" icon="pi pi-plus" (onClick)="openDialog()" />
       </div>
 
       @if (loading()) {
         <div class="cards-grid">
-          @for (i of [1,2,3]; track i) { <p-skeleton height="160px" borderRadius="0.75rem" /> }
+          @for (i of [1,2,3]; track i) { <p-skeleton height="180px" borderRadius="1.25rem" /> }
         </div>
       } @else if (budgets().length === 0) {
-        <div class="py-16 text-center">
-          <i class="pi pi-calculator text-4xl text-[var(--color-text-muted)] mb-3 block"></i>
-          <p class="text-[var(--color-text-muted)]">Nenhum orçamento cadastrado</p>
+        <div class="empty-hero">
+          <div class="empty-icon-circle">
+            <i class="pi pi-calculator"></i>
+          </div>
+          <p class="empty-title">Nenhum orçamento cadastrado</p>
+          <p class="empty-desc">Crie orçamentos para controlar seus gastos por categoria</p>
+          <p-button label="Criar orçamento" icon="pi pi-plus" (onClick)="openDialog()" />
         </div>
       } @else {
         <div class="cards-grid">
@@ -119,6 +126,46 @@ const PERIODS = [
 
     <p-confirmDialog />
   `,
+  styles: [`
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      font-weight: 400;
+    }
+    .empty-hero {
+      text-align: center;
+      padding: 4rem 1rem;
+    }
+    .empty-icon-circle {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(0, 212, 170, 0.08));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .empty-icon-circle i {
+      font-size: 2rem;
+      color: var(--primary-500, #6C5CE7);
+    }
+    .empty-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+    .empty-desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 768px) {
+      .card { padding: 1.25rem; }
+    }
+  `],
 })
 export class BudgetsComponent implements OnInit {
   private finance = inject(FinanceService);

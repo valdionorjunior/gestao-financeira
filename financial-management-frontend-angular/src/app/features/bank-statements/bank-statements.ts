@@ -22,13 +22,24 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
   template: `
     <div class="page-container">
       <div class="page-header">
-        <h1>Extratos Bancários</h1>
+        <div>
+          <h1>Extratos Bancários</h1>
+          <p class="page-subtitle">Importe e gerencie extratos das suas contas</p>
+        </div>
       </div>
 
       <!-- Upload -->
-      <div class="card">
-        <h3 class="font-semibold text-[var(--text-color)] mb-4">Importar Extrato</h3>
-        <div class="flex flex-wrap items-end gap-4">
+      <div class="card upload-section">
+        <div class="upload-header">
+          <div class="upload-icon-circle">
+            <i class="pi pi-cloud-upload"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-[var(--text-primary)]">Importar Extrato</h3>
+            <p class="text-xs text-[var(--text-secondary)]">Formatos aceitos: CSV, OFX, QIF</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-end gap-4 mt-4">
           <div class="flex flex-col gap-1 min-w-48">
             <label class="text-sm text-[var(--text-color-secondary)]">Conta</label>
             <p-select
@@ -83,7 +94,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
       </div>
 
       <!-- Table -->
-      <div class="card" style="padding:0; overflow:hidden;">
+      <div class="card table-card">
         <p-table [value]="statements()" [loading]="loading()" responsiveLayout="scroll" styleClass="p-datatable-sm">
           <ng-template #header>
             <tr>
@@ -120,6 +131,42 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
       </div>
     </div>
   `,
+  styles: [`
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      font-weight: 400;
+    }
+    .upload-section {
+      margin-bottom: 1.5rem;
+    }
+    .upload-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .upload-icon-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-lg, 20px);
+      background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(0, 212, 170, 0.08));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-500, #6C5CE7);
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+    .table-card {
+      padding: 0 !important;
+      overflow: hidden;
+    }
+    @media (max-width: 768px) {
+      .upload-header { flex-direction: column; text-align: center; }
+      .upload-icon-circle { margin: 0 auto 1rem; }
+    }
+  `],
 })
 export class BankStatementsComponent implements OnInit {
   private finance = inject(FinanceService);

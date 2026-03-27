@@ -28,28 +28,35 @@ import { GoalStatusPipe } from '../../shared/pipes/label.pipes';
   template: `
     <div class="page-container">
       <div class="page-header">
-        <h1>Metas Financeiras</h1>
+        <div>
+          <h1>Metas Financeiras</h1>
+          <p class="page-subtitle">Defina objetivos e acompanhe seu progresso</p>
+        </div>
         <p-button label="Nova Meta" icon="pi pi-plus" (onClick)="openDialog()" />
       </div>
 
       @if (loading()) {
         <div class="cards-grid">
-          @for (i of [1,2,3]; track i) { <p-skeleton height="200px" borderRadius="0.75rem" /> }
+          @for (i of [1,2,3]; track i) { <p-skeleton height="220px" borderRadius="1.25rem" /> }
         </div>
       } @else if (goals().length === 0) {
-        <div class="py-16 text-center">
-          <i class="pi pi-flag text-4xl text-[var(--text-color-secondary)] mb-3 block"></i>
-          <p class="text-[var(--text-color-secondary)]">Nenhuma meta cadastrada</p>
+        <div class="empty-hero">
+          <div class="empty-icon-circle">
+            <i class="pi pi-flag"></i>
+          </div>
+          <p class="empty-title">Nenhuma meta cadastrada</p>
+          <p class="empty-desc">Defina metas financeiras e acompanhe seu progresso</p>
+          <p-button label="Criar meta" icon="pi pi-plus" (onClick)="openDialog()" />
         </div>
       } @else {
         <div class="cards-grid">
           @for (g of goals(); track g.id) {
-            <div class="card" style="display:flex; flex-direction:column; gap:1rem;">
+            <div class="card goal-card">
               <div class="flex items-start justify-between">
                 <div>
-                  <p class="font-semibold text-[var(--text-color)]">{{ g.name }}</p>
+                  <p class="font-semibold text-[var(--text-primary)]">{{ g.name }}</p>
                   @if (g.deadline) {
-                    <p class="text-xs text-[var(--text-color-secondary)] mt-0.5">
+                    <p class="text-xs text-[var(--text-secondary)] mt-0.5">
                       <i class="pi pi-calendar mr-1"></i>{{ g.deadline | date:'dd/MM/yyyy' }}
                     </p>
                   }
@@ -62,12 +69,12 @@ import { GoalStatusPipe } from '../../shared/pipes/label.pipes';
 
               <!-- Progress -->
               <div>
-                <div class="flex justify-between text-xs text-[var(--text-color-secondary)] mb-1">
+                <div class="flex justify-between text-xs text-[var(--text-secondary)] mb-1">
                   <span>{{ g.currentAmount | currency:'BRL':'symbol':'1.2-2' }}</span>
                   <span>{{ g.targetAmount | currency:'BRL':'symbol':'1.2-2' }}</span>
                 </div>
                 <p-progressbar [value]="pct(g)" [showValue]="false" styleClass="h-2" />
-                <p class="text-xs mt-1 font-medium text-[var(--primary-color)]">{{ pct(g) | number:'1.0-0' }}% atingido</p>
+                <p class="text-xs mt-1 font-medium" style="color: var(--primary-500);">{{ pct(g) | number:'1.0-0' }}% atingido</p>
               </div>
 
               <div class="flex gap-2">
@@ -128,6 +135,51 @@ import { GoalStatusPipe } from '../../shared/pipes/label.pipes';
 
     <p-confirmDialog />
   `,
+  styles: [`
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      font-weight: 400;
+    }
+    .empty-hero {
+      text-align: center;
+      padding: 4rem 1rem;
+    }
+    .empty-icon-circle {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(0, 212, 170, 0.08));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .empty-icon-circle i {
+      font-size: 2rem;
+      color: var(--primary-500, #6C5CE7);
+    }
+    .empty-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+    .empty-desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+    .goal-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    @media (max-width: 768px) {
+      .goal-card { padding: 1.25rem; }
+    }
+  `],
 })
 export class GoalsComponent implements OnInit {
   private finance = inject(FinanceService);

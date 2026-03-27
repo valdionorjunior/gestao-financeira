@@ -263,32 +263,34 @@ import { TxTypePipe } from '../../shared/pipes/label.pipes';
     </div>
   `,
   styles: [`
+    /* ═══ DASHBOARD v2026 — Ultra Violeta + Menta + Coral ═══ */
     .dashboard-grid {
       display: grid;
       grid-template-columns: 2fr 1fr;
       gap: 1.5rem;
+      margin-top: 1.5rem;
     }
 
     @media (max-width: 1024px) {
       .dashboard-grid { grid-template-columns: 1fr; }
     }
 
+    /* ── Empty State inline ─── */
     .empty-state {
       text-align: center;
       padding: 3rem 1rem;
-      color: var(--text-color-secondary);
+      color: var(--text-secondary, #636E72);
     }
-
     .empty-state i {
       font-size: 2.5rem;
       margin-bottom: 0.75rem;
       display: block;
+      color: var(--text-muted, #B2BEC3);
     }
-
     .empty-state p { font-size: 0.9rem; }
 
+    /* ── Insights ─── */
     .insights-list { display: flex; flex-direction: column; gap: 0.75rem; }
-
     .insight-item {
       display: flex;
       align-items: flex-start;
@@ -296,76 +298,59 @@ import { TxTypePipe } from '../../shared/pipes/label.pipes';
       padding: 0.875rem 1rem;
       border-radius: var(--radius-md, 16px);
       border: 1px solid transparent;
+      transition: all 0.25s;
     }
-
-    .insight-item i {
-      font-size: 0.9rem;
-      margin-top: 2px;
-      flex-shrink: 0;
+    .insight-item:hover {
+      transform: translateX(4px);
+      box-shadow: 0 2px 8px rgba(108, 92, 231, 0.06);
     }
-
-    .insight-item p {
-      font-size: 0.8rem;
-      color: var(--text-color);
-      line-height: 1.5;
-    }
+    .insight-item i { font-size: 0.9rem; margin-top: 2px; flex-shrink: 0; }
+    .insight-item p { font-size: 0.8rem; color: var(--text-primary, #2D3436); line-height: 1.5; }
 
     .page-header p {
       background: none !important;
-      -webkit-text-fill-color: var(--text-color-secondary) !important;
+      -webkit-text-fill-color: var(--text-secondary, #636E72) !important;
       font-weight: 400;
       margin-top: 0.25rem;
     }
 
+    /* ── Budget bars ─── */
     .budget-bar-bg {
       height: 8px;
-      background: var(--surface-border, rgba(128,128,128,0.15));
+      background: var(--surface-border, rgba(108, 92, 231, 0.08));
       border-radius: 99px;
       overflow: hidden;
     }
-
     .budget-bar-fill {
       height: 8px;
       border-radius: 99px;
-      transition: width 0.4s ease;
+      transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
 
+    /* ── Prediction ─── */
     .prediction-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
     }
-
     @media (max-width: 768px) {
       .prediction-grid { grid-template-columns: 1fr; }
     }
-
     .prediction-highlight {
-      background: linear-gradient(135deg, rgba(99,91,255,0.12), rgba(0,229,229,0.08));
-      border: 1px solid rgba(99,91,255,0.25);
-      border-radius: 1rem;
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      gap: 0.5rem;
+      background: linear-gradient(135deg, rgba(108, 92, 231, 0.08), rgba(0, 212, 170, 0.06));
+      border: 1px solid rgba(108, 92, 231, 0.18);
+      border-radius: var(--radius-xl, 24px);
+      padding: 1.75rem;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; text-align: center; gap: 0.5rem;
+      transition: all 0.3s;
     }
-
-    .prediction-label {
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--primary);
-      margin: 0;
+    .prediction-highlight:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md, 0 4px 16px rgba(108, 92, 231, 0.12));
     }
-
-    .prediction-value {
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: var(--primary);
-      margin: 0;
-    }
+    .prediction-label { font-size: 0.8rem; font-weight: 600; color: var(--primary-500, #6C5CE7); margin: 0; }
+    .prediction-value { font-size: 1.75rem; font-weight: 700; color: var(--primary-500, #6C5CE7); margin: 0; }
   `],
 })
 export class DashboardComponent implements OnInit {
@@ -444,8 +429,8 @@ export class DashboardComponent implements OnInit {
             {
               label: 'Receitas',
               data: incomes,
-              borderColor: '#10B981',
-              backgroundColor: 'rgba(16,185,129,0.15)',
+              borderColor: '#00D4AA',
+              backgroundColor: 'rgba(0,212,170,0.12)',
               fill: true,
               tension: 0.4,
               pointRadius: 4,
@@ -453,8 +438,8 @@ export class DashboardComponent implements OnInit {
             {
               label: 'Despesas',
               data: expenses,
-              borderColor: '#EF4444',
-              backgroundColor: 'rgba(239,68,68,0.12)',
+              borderColor: '#FF6B6B',
+              backgroundColor: 'rgba(255,107,107,0.10)',
               fill: true,
               tension: 0.4,
               pointRadius: 4,
@@ -482,13 +467,13 @@ export class DashboardComponent implements OnInit {
   }
 
   insightBg(type: string): string {
-    const m: Record<string, string> = { WARNING: 'rgba(245,158,11,0.08)', TIP: 'rgba(59,130,246,0.08)', SUCCESS: 'rgba(16,185,129,0.08)' };
-    return m[type] ?? 'rgba(139,92,246,0.06)';
+    const m: Record<string, string> = { WARNING: 'rgba(245,158,11,0.08)', TIP: 'rgba(59,130,246,0.08)', SUCCESS: 'rgba(0,212,170,0.08)' };
+    return m[type] ?? 'rgba(108,92,231,0.06)';
   }
 
   insightBorder(type: string): string {
-    const m: Record<string, string> = { WARNING: 'rgba(245,158,11,0.25)', TIP: 'rgba(59,130,246,0.2)', SUCCESS: 'rgba(16,185,129,0.25)' };
-    return m[type] ?? 'rgba(139,92,246,0.15)';
+    const m: Record<string, string> = { WARNING: 'rgba(245,158,11,0.25)', TIP: 'rgba(59,130,246,0.2)', SUCCESS: 'rgba(0,212,170,0.25)' };
+    return m[type] ?? 'rgba(108,92,231,0.15)';
   }
 
   formatPredictMonth(month: string): string {

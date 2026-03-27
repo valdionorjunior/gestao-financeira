@@ -20,7 +20,10 @@ import { ChartModule } from 'primeng/chart';
   template: `
     <div class="page-container">
       <div class="page-header">
-        <h1>Relatórios</h1>
+        <div>
+          <h1>Relatórios</h1>
+          <p class="page-subtitle">Análises detalhadas das suas finanças</p>
+        </div>
       </div>
 
       <p-tabs [value]="0">
@@ -173,6 +176,37 @@ import { ChartModule } from 'primeng/chart';
     </div>
   `,
   styles: [`
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      font-weight: 400;
+    }
+    :host ::ng-deep .p-tablist-tab-list {
+      gap: 0.25rem;
+    }
+    :host ::ng-deep .p-tab {
+      padding: 0.625rem 1.125rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      letter-spacing: 0.01em;
+      border-radius: 12px 12px 0 0;
+      transition: all 0.25s ease;
+      color: var(--text-secondary, #636E72);
+      white-space: nowrap;
+    }
+    :host ::ng-deep .p-tab:hover {
+      background: rgba(108, 92, 231, 0.06);
+      color: var(--primary-500, #6C5CE7);
+    }
+    :host ::ng-deep .p-tab-active {
+      background: rgba(108, 92, 231, 0.1) !important;
+      color: var(--primary-500, #6C5CE7) !important;
+      border-bottom: 3px solid var(--primary-500, #6C5CE7) !important;
+    }
+    :host ::ng-deep .p-tablist-active-bar {
+      background: var(--primary-500, #6C5CE7) !important;
+    }
     .budget-bar-bg {
       height: 8px;
       background: var(--surface-border, rgba(128,128,128,0.15));
@@ -188,6 +222,9 @@ import { ChartModule } from 'primeng/chart';
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.5rem;
+    }
+    @media (max-width: 1024px) {
+      .charts-row { grid-template-columns: 1fr; }
     }
     @media (max-width: 768px) {
       .charts-row { grid-template-columns: 1fr; }
@@ -234,7 +271,7 @@ export class ReportsComponent implements OnInit {
     plugins: { legend: { position: 'right' } },
   };
 
-  PALETTE = ['#635BFF','#00E5E5','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#F97316','#06B6D4','#6EE7B7'];
+  PALETTE = ['#6C5CE7','#00D4AA','#00B894','#F59E0B','#FF6B6B','#9A8CFF','#EC4899','#F97316','#06B6D4','#80FFD4'];
 
   ngOnInit() {
     this.finance.getCategories().subscribe(c => this.categories.set(c));
@@ -255,8 +292,8 @@ export class ReportsComponent implements OnInit {
         this.cashFlowChart.set({
           labels,
           datasets: [
-            { label: 'Receitas', data: data.map((d: any) => d.income  ?? 0), backgroundColor: '#10B981' },
-            { label: 'Despesas', data: data.map((d: any) => d.expense ?? 0), backgroundColor: '#EF4444' },
+            { label: 'Receitas', data: data.map((d: any) => d.income  ?? 0), backgroundColor: '#00D4AA' },
+            { label: 'Despesas', data: data.map((d: any) => d.expense ?? 0), backgroundColor: '#FF6B6B' },
           ],
         });
         this.loadingCF.set(false);
