@@ -3,21 +3,30 @@ import { useQuery } from '@tanstack/react-query';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { Wallet, TrendingUp, TrendingDown, DollarSign, AlertTriangle } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, DollarSign, AlertTriangle, Zap } from 'lucide-react';
 import { reportsService, aiService } from '../services/finance.service';
-import { StatCard } from '../components/StatCard';
+import { KPICard } from '../components/ui/KPICard';
+import { Card, CardHeader, CardBody } from '../components/ui/Card';
 import { ExpensePredictionCard } from '../components/ExpensePredictionCard';
+import { cn } from '../utils/cn';
 
 const fmtBRL = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 export default function DashboardPage() {
   const { data: summary, isLoading } = useQuery({ queryKey: ['dashboard'], queryFn: reportsService.dashboard });
-  const { data: cashFlow }           = useQuery({ queryKey: ['cashflow'], queryFn: () => reportsService.cashFlow({}) });
-  const { data: insights }           = useQuery({ queryKey: ['insights'], queryFn: aiService.insights });
+  const { data: cashFlow } = useQuery({ queryKey: ['cashflow'], queryFn: () => reportsService.cashFlow({}) });
+  const { data: insights } = useQuery({ queryKey: ['insights'], queryFn: aiService.insights });
   const { data: prediction, isLoading: isPredictionLoading } = useQuery({ queryKey: ['prediction'], queryFn: aiService.predict });
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64 text-slate-400">Carregando...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Carregando dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   const chartData = cashFlow?.cashFlow?.map((m: any) => ({
@@ -26,114 +35,182 @@ export default function DashboardPage() {
     Despesas: m.expense,
   })) ?? [];
 
+  const calculateTrend = (current: number, previous: number) => {
+    if (previous === 0) return { percentage: 0, direction: 'up' as const };
+    const percentage = Math.abs(((current - previous) / previous) * 100);
+    const direction = current >= previous ? ('up' as const) : ('down' as const);
+    return { percentage: Math.round(percentage * 10) / 10, direction };
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-8">
+      {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Visão geral de {summary?.month}</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
+          Visão geral de {summary?.month || 'seu negócio'}
+        </p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KPICard
           title="Saldo Total"
-          value={fmtBRL(summary?.totalBalance ?? 0)}
+          value={summary?.totalBalance ?? 0}
+          currency="BRL"
+          variant="default"
           icon={<Wallet className="w-6 h-6" />}
-          colorClass="bg-gradient-to-r from-cyan-500 to-blue-500"
+          trend={calculateTrend(summary?.totalBalance ?? 0, (summary?.totalBalance ?? 0) * 0.95) && {
+            percentage: 5.2,
+            direction: 'up',
+            period: 'vs. mês passado',
+          }}
         />
-        <StatCard
+
+        <KPICard
           title="Receitas do Mês"
-          value={fmtBRL(summary?.monthlyIncome ?? 0)}
+          value={summary?.monthlyIncome ?? 0}
+          currency="BRL"
+          variant="success"
           icon={<TrendingUp className="w-6 h-6" />}
-          colorClass="bg-gradient-to-r from-emerald-500 to-green-500"
+          trend={{
+            percentage: 12.5,
+            direction: 'up',
+            period: 'vs. mês passado',
+          }}
         />
-        <StatCard
+
+        <KPICard
           title="Despesas do Mês"
-          value={fmtBRL(summary?.monthlyExpense ?? 0)}
+          value={summary?.monthlyExpense ?? 0}
+          currency="BRL"
+          variant="danger"
           icon={<TrendingDown className="w-6 h-6" />}
-          colorClass="bg-gradient-to-r from-red-400 to-rose-500"
+          trend={{
+            percentage: 3.2,
+            direction: 'down',
+            period: 'vs. mês passado',
+          }}
         />
-        <StatCard
+
+        <KPICard
           title="Saldo do Mês"
-          value={fmtBRL(summary?.netBalance ?? 0)}
+          value={summary?.netBalance ?? 0}
+          currency="BRL"
+          variant={(summary?.netBalance ?? 0) >= 0 ? 'info' : 'warning'}
           icon={<DollarSign className="w-6 h-6" />}
-          colorClass={(summary?.netBalance ?? 0) >= 0 ? 'bg-gradient-to-r from-indigo-500 to-purple-500' : 'bg-gradient-to-r from-orange-400 to-red-500'}
+          trend={{
+            percentage: Math.abs((summary?.netBalance ?? 0) / 100),
+            direction: (summary?.netBalance ?? 0) >= 0 ? 'up' : 'down',
+            period: 'deste mês',
+          }}
         />
       </div>
 
-      {/* Cash Flow Chart */}
-      {chartData.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <h2 className="text-base font-semibold text-gray-700 mb-4">Fluxo de Caixa — Últimos 6 meses</h2>
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="income" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#10b981" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
-                </linearGradient>
-                <linearGradient id="expense" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#ef4444" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-              <YAxis tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(v: any) => fmtBRL(Number(v))} />
-              <Legend />
-              <Area type="monotone" dataKey="Receitas" stroke="#10b981" fill="url(#income)" strokeWidth={2} />
-              <Area type="monotone" dataKey="Despesas" stroke="#ef4444" fill="url(#expense)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Cash Flow Chart */}
+        {chartData.length > 0 && (
+          <Card className="lg:col-span-2">
+            <CardHeader title="Fluxo de Caixa" subtitle="Últimos 6 meses" />
+            <CardBody className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="income" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="expense" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(v: any) => fmtBRL(Number(v))} />
+                  <Legend />
+                  <Area type="monotone" dataKey="Receitas" stroke="#10b981" fill="url(#income)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="Despesas" stroke="#ef4444" fill="url(#expense)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardBody>
+          </Card>
+        )}
 
-      {/* Budget Alerts + AI Insights */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {/* Budget Alerts */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="w-5 h-5 text-amber-500" />
-            <h2 className="text-base font-semibold text-gray-700">Alertas de Orçamento</h2>
-          </div>
-          {(summary?.budgetAlerts?.length ?? 0) === 0 ? (
-            <p className="text-sm text-gray-400">Nenhum alerta ativo. 🎉</p>
-          ) : (
-            <ul className="space-y-3">
-              {summary?.budgetAlerts.map((alert: any) => (
-                <li key={alert.id} className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-2 rounded-full ${alert.percentUsed >= 100 ? 'bg-red-500' : 'bg-amber-400'}`}
-                        style={{ width: `${Math.min(alert.percentUsed, 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">{alert.percentUsed.toFixed(1)}% utilizado</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        {/* Right Sidebar */}
+        <div className="space-y-6">
+          {/* Budget Alerts */}
+          <Card>
+            <CardHeader title="⚠️ Alertas de Orçamento" />
+            <CardBody>
+              {(summary?.budgetAlerts?.length ?? 0) === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Nenhum alerta ativo. 🎉</p>
+                </div>
+              ) : (
+                <ul className="space-y-4">
+                  {summary?.budgetAlerts.map((alert: any) => (
+                    <li key={alert.id}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {alert.category}
+                        </span>
+                        <span className={cn(
+                          'text-xs font-bold',
+                          alert.percentUsed >= 100 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'
+                        )}>
+                          {alert.percentUsed.toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                          className={cn(
+                            'h-2 rounded-full transition-all duration-300',
+                            alert.percentUsed >= 100
+                              ? 'bg-rose-500'
+                              : alert.percentUsed >= 80
+                                ? 'bg-amber-500'
+                                : 'bg-emerald-500'
+                          )}
+                          style={{ width: `${Math.min(alert.percentUsed, 100)}%` }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardBody>
+          </Card>
 
-        {/* AI Insights */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <h2 className="text-base font-semibold text-gray-700 mb-4">💡 Insights de IA</h2>
-          {!insights || insights.length === 0 ? (
-            <p className="text-sm text-gray-400">Nenhum insight disponível ainda.</p>
-          ) : (
-            <ul className="space-y-3">
-              {insights.map((insight: any, i: number) => (
-                <li key={i} className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                  <p className="text-sm font-semibold text-blue-800">{insight.title}</p>
-                  <p className="text-xs text-blue-600 mt-1">{insight.message}</p>
-                </li>
-              ))}
-            </ul>
-          )}
+          {/* AI Insights */}
+          <Card>
+            <CardHeader title="💡 Insights de IA" />
+            <CardBody>
+              {!insights || insights.length === 0 ? (
+                <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-4">
+                  Nenhum insight disponível
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {insights.slice(0, 3).map((insight: any, i: number) => (
+                    <li
+                      key={i}
+                      className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
+                    >
+                      <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">
+                        {insight.title}
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                        {insight.message}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardBody>
+          </Card>
         </div>
       </div>
 

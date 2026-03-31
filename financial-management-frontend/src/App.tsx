@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { ProtectedLayout } from './app/components/ProtectedLayout';
 import { ErrorBoundary } from './app/components/ErrorBoundary';
+import { ThemeProvider } from './app/components/ThemeProvider';
 
 const LoginPage          = lazy(() => import('./app/pages/LoginPage'));
 const RegisterPage       = lazy(() => import('./app/pages/RegisterPage'));
@@ -27,29 +28,31 @@ const AppLoader = () => (
 
 function App() {
   return (
-    <QueryClientProvider client={qc}>
-      <BrowserRouter>
-        <ErrorBoundary>
-          <Suspense fallback={<AppLoader />}>
-          <Routes>
-            <Route path="/login"    element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/" element={<ProtectedLayout><DashboardPage /></ProtectedLayout>} />
-            <Route path="/accounts" element={<ProtectedLayout><AccountsPage /></ProtectedLayout>} />
-            <Route path="/categories" element={<ProtectedLayout><CategoriesPage /></ProtectedLayout>} />
-            <Route path="/transactions" element={<ProtectedLayout><TransactionsPage /></ProtectedLayout>} />
-            <Route path="/budgets" element={<ProtectedLayout><BudgetsPage /></ProtectedLayout>} />
-            <Route path="/goals" element={<ProtectedLayout><GoalsPage /></ProtectedLayout>} />
-            <Route path="/reports" element={<ProtectedLayout><ReportsPage /></ProtectedLayout>} />
-            <Route path="/bank-statements" element={<ProtectedLayout><BankStatementsPage /></ProtectedLayout>} />
-            <Route path="/ai" element={<ProtectedLayout><AIPage /></ProtectedLayout>} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          </Suspense>
-        </ErrorBoundary>
-      </BrowserRouter>
-      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={qc}>
+        <BrowserRouter>
+          <ErrorBoundary>
+            <Suspense fallback={<AppLoader />}>
+            <Routes>
+              <Route path="/login"    element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/" element={<ProtectedLayout><DashboardPage /></ProtectedLayout>} />
+              <Route path="/accounts" element={<ProtectedLayout><AccountsPage /></ProtectedLayout>} />
+              <Route path="/categories" element={<ProtectedLayout><CategoriesPage /></ProtectedLayout>} />
+              <Route path="/transactions" element={<ProtectedLayout><TransactionsPage /></ProtectedLayout>} />
+              <Route path="/budgets" element={<ProtectedLayout><BudgetsPage /></ProtectedLayout>} />
+              <Route path="/goals" element={<ProtectedLayout><GoalsPage /></ProtectedLayout>} />
+              <Route path="/reports" element={<ProtectedLayout><ReportsPage /></ProtectedLayout>} />
+              <Route path="/bank-statements" element={<ProtectedLayout><BankStatementsPage /></ProtectedLayout>} />
+              <Route path="/ai" element={<ProtectedLayout><AIPage /></ProtectedLayout>} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+            </Suspense>
+          </ErrorBoundary>
+        </BrowserRouter>
+        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
