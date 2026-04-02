@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuthStore } from './app/stores/auth.store'
 import { Layout } from './app/components/Layout'
 import { DashboardPage } from './app/pages/DashboardPage'
@@ -10,17 +10,44 @@ import { BudgetsPage } from './app/pages/BudgetsPage'
 import { GoalsPage } from './app/pages/GoalsPage'
 import { ReportsPage } from './app/pages/ReportsPage'
 import { AIPage } from './app/pages/AIPage'
+import { apiClient } from './app/services/api'
 import type { AuthStore } from './app/stores/auth.store'
 
 function App() {
   const isAuthenticated = useAuthStore((state: AuthStore) => state.isAuthenticated)
   const setLoading = useAuthStore((state: AuthStore) => state.setLoading)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [loginError, setLoginError] = useState('')
 
   useEffect(() => {
-    // Simular verificação de autenticação
-    setTimeout(() => {
+    // Verificar se há token vál ido no localStorage
+    const token = localStorage.getItem('token')
+    if (token) {
+      // Tentar restaurar sessão
+      apiClient.getCurrentUser()
+        .then((user) => {
+          useAuthStore.setState({
+            isAuthenticated: true,
+            user,
+            token,
+          })
+        })
+        .catch(() => {
+          localStorage.removeItem('token')
+          useAuthStore.setState({
+            isAuthenticated: false,
+            user: null,
+            token: null,
+          })
+        })
+        .finally(() => {
+          setLoading(false)
+        })
+    } else {
       setLoading(false)
-    }, 1000)
+    }
   }, [setLoading])
 
   // Se não autenticado, redireciona para login
@@ -31,19 +58,24 @@ function App() {
           <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">Finanças</h1>
 
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault()
-              // Mock login
-              useAuthStore.setState({
-                isAuthenticated: true,
-                user: {
-                  id: '1',
-                  email: 'user@example.com',
-                  name: 'João Silva',
-                  role: 'TITULAR',
-                },
-                token: 'mock-token-123',
-              })
+              setLoginError('')
+              setLoginLoading(true)
+
+              try {
+                const response = await apiClient.login(email, password)
+                useAuthStore.setState({
+                  isAuthenticated: true,
+                  user: response.user,
+                  token: response.accessToken,
+                })
+              } catch (error: any) {
+                const errorMessage = error.response?.data?.message || 'Erro ao fazer login'
+                setLoginError(errorMessage)
+              } finally {
+                setLoginLoading(false)
+              }
             }}
           >
             <div className="space-y-4">
@@ -52,8 +84,10 @@ function App() {
                 <input
                   type="email"
                   placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  defaultValue="user@example.com"
+                  required
                 />
               </div>
               <div>
@@ -61,21 +95,29 @@ function App() {
                 <input
                   type="password"
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  defaultValue="password"
+                  required
                 />
               </div>
+              {loginError && (
+                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                  {loginError}
+                </div>
+              )}
               <button
                 type="submit"
-                className="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                disabled={loginLoading}
+                className="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Entrar
+                {loginLoading ? 'Carregando...' : 'Entrar'}
               </button>
             </div>
           </form>
 
           <p className="text-center text-gray-600 text-sm mt-4">
-            Demonstração - Clique em "Entrar" para acessar o dashboard
+            Faça login com suas credenciais para acessar o dashboard
           </p>
         </div>
       </div>
