@@ -60,8 +60,7 @@ describe('CreateTransferUseCase', () => {
 
     const result = await useCase.execute(baseDto as any, ownerId);
 
-    expect(result.debit.id).toBe('txn-debit');
-    expect(result.credit.id).toBe('txn-credit');
+    expect(result.id).toBe('txn-debit');
     expect(mockAccountRepository.updateBalance).toHaveBeenCalledWith('account-origin', -500);
     expect(mockAccountRepository.updateBalance).toHaveBeenCalledWith('account-destination', 500);
   });

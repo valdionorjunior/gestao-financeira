@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { BudgetEntity } from '../persistence/typeorm/entities/budget.entity';
 import { IBudgetRepository } from '../../domain/repositories/budget.repository.interface';
 import { Budget } from '../../domain/entities/budget-goal.entity';
+import { convertDatesToStrings, convertStringsToDate } from '../../common/utils/date-mapper.util';
 
 @Injectable()
 export class BudgetRepository implements IBudgetRepository {
@@ -15,6 +16,9 @@ export class BudgetRepository implements IBudgetRepository {
   private toModel(e: BudgetEntity): Budget {
     const b = new Budget();
     Object.assign(b, e);
+    // Convert date strings back to Date objects for proper JSON serialization
+    const converted = convertStringsToDate(b, ['startDate', 'endDate'] as any);
+    Object.assign(b, converted);
     return b;
   }
 
@@ -40,13 +44,15 @@ export class BudgetRepository implements IBudgetRepository {
   }
 
   async save(data: Partial<Budget>): Promise<Budget> {
-    const entity = this.repo.create(data as Partial<BudgetEntity>);
+    const converted = convertDatesToStrings(data, ['startDate', 'endDate'] as any);
+    const entity = this.repo.create(converted as Partial<BudgetEntity>);
     const saved  = await this.repo.save(entity);
     return this.toModel(saved);
   }
 
   async update(id: string, data: Partial<Budget>): Promise<Budget> {
-    await this.repo.update(id, data as Partial<BudgetEntity>);
+    const converted = convertDatesToStrings(data, ['startDate', 'endDate'] as any);
+    await this.repo.update(id, converted as Partial<BudgetEntity>);
     return (await this.findById(id)) as Budget;
   }
 

@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards,
-  HttpCode, HttpStatus, ParseUUIDPipe,
+  HttpCode, HttpStatus, ParseUUIDPipe, BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -31,6 +31,9 @@ export class TransactionController {
   @Post()
   @ApiOperation({ summary: 'Registrar receita ou despesa' })
   create(@Body() dto: CreateTransactionDto, @CurrentUser() user: any) {
+    if (dto.type === TransactionType.TRANSFER) {
+      throw new BadRequestException('Use o endpoint POST /transactions/transfer para criar transferências');
+    }
     return this.createUseCase.execute(dto, user.userId);
   }
 

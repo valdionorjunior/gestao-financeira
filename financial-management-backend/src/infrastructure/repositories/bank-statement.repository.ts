@@ -7,6 +7,7 @@ import {
   IBankStatementRepository, IBankStatementItemRepository,
 } from '../../domain/repositories/bank-statement.repository.interface';
 import { BankStatement, BankStatementItem, ReconciliationStatus } from '../../domain/entities/bank-statement.entity';
+import { convertDatesToStrings, convertStringsToDate } from '../../common/utils/date-mapper.util';
 
 @Injectable()
 export class BankStatementRepository implements IBankStatementRepository {
@@ -16,7 +17,7 @@ export class BankStatementRepository implements IBankStatementRepository {
   ) {}
 
   private toModel(e: BankStatementEntity): BankStatement {
-    return {
+    const converted = convertStringsToDate({
       id:           e.id,
       userId:       e.userId,
       accountId:    e.accountId,
@@ -28,17 +29,19 @@ export class BankStatementRepository implements IBankStatementRepository {
       periodStart:  (e as any).periodStart,
       periodEnd:    (e as any).periodEnd,
       createdAt:    (e as any).createdAt,
-    };
+    }, ['periodStart', 'periodEnd', 'importedAt'] as any);
+    return converted as unknown as BankStatement;
   }
 
   async save(data: Partial<BankStatement>): Promise<BankStatement> {
+    const converted = convertDatesToStrings(data, ['periodStart', 'periodEnd'] as any);
     const entity = this.repo.create({
       userId:    data.userId,
       accountId: data.accountId,
       fileName:  data.filename,
       fileType:  data.fileType as any,
       fileUrl:   '',
-      ...(data as any),
+      ...(converted as any),
     } as Partial<BankStatementEntity>);
     const saved = await this.repo.save(entity);
     return this.toModel(saved);
@@ -74,7 +77,7 @@ export class BankStatementItemRepository implements IBankStatementItemRepository
       type:                e.type as any,
       amount:              Number(e.amount),
       description:         e.description,
-      date:                new Date(e.date),
+      date:                convertStringsToDate({ date: e.date }, ['date'] as any).date as any,
       status:              e.status as unknown as ReconciliationStatus,
       transactionId:       e.transactionId,
       suggestedCategoryId: undefined,
@@ -82,7 +85,8 @@ export class BankStatementItemRepository implements IBankStatementItemRepository
   }
 
   async saveMany(items: Partial<BankStatementItem>[]): Promise<BankStatementItem[]> {
-    const entities = this.repo.create(items as Partial<BankStatementItemEntity>[]);
+    const converted = items.map(item => convertDatesToStrings(item, ['date'] as any));
+    const entities = this.repo.create(converted as Partial<BankStatementItemEntity>[]);
     const saved    = await this.repo.save(entities);
     return saved.map(e => this.toModel(e));
   }

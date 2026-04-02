@@ -7,6 +7,7 @@ import {
   IGoalRepository, IGoalContributionRepository, GoalContribution,
 } from '../../domain/repositories/goal.repository.interface';
 import { Goal } from '../../domain/entities/budget-goal.entity';
+import { convertDatesToStrings, convertStringsToDate } from '../../common/utils/date-mapper.util';
 
 @Injectable()
 export class GoalRepository implements IGoalRepository {
@@ -18,6 +19,9 @@ export class GoalRepository implements IGoalRepository {
   private toModel(e: GoalEntity): Goal {
     const g = new Goal();
     Object.assign(g, e);
+    // Convert date strings back to Date objects for proper JSON serialization
+    const converted = convertStringsToDate(g, ['targetDate'] as any);
+    Object.assign(g, converted);
     return g;
   }
 
@@ -32,13 +36,15 @@ export class GoalRepository implements IGoalRepository {
   }
 
   async save(data: Partial<Goal>): Promise<Goal> {
-    const entity = this.repo.create(data as Partial<GoalEntity>);
+    const converted = convertDatesToStrings(data, ['targetDate'] as any);
+    const entity = this.repo.create(converted as Partial<GoalEntity>);
     const saved  = await this.repo.save(entity);
     return this.toModel(saved);
   }
 
   async update(id: string, data: Partial<Goal>): Promise<Goal> {
-    await this.repo.update(id, data as Partial<GoalEntity>);
+    const converted = convertDatesToStrings(data, ['targetDate'] as any);
+    await this.repo.update(id, converted as Partial<GoalEntity>);
     return (await this.findById(id)) as Goal;
   }
 
@@ -77,7 +83,8 @@ export class GoalContributionRepository implements IGoalContributionRepository {
   }
 
   async save(data: Partial<GoalContribution>): Promise<GoalContribution> {
-    const entity = this.repo.create(data as Partial<GoalContributionEntity>);
+    const converted = convertDatesToStrings(data, ['date'] as any);
+    const entity = this.repo.create(converted as Partial<GoalContributionEntity>);
     const saved  = await this.repo.save(entity);
     return {
       id:        saved.id,

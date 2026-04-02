@@ -3,14 +3,15 @@ import {
 } from '@nestjs/common';
 import { IBudgetRepository, BUDGET_REPOSITORY } from '../../../domain/repositories/budget.repository.interface';
 import { CreateBudgetDto, UpdateBudgetDto } from '../../dtos/budgets/budget.dto';
+import { parseDateString } from '../../../common/utils/date.utils';
 
 @Injectable()
 export class CreateBudgetUseCase {
   constructor(@Inject(BUDGET_REPOSITORY) private readonly repo: IBudgetRepository) {}
 
   async execute(dto: CreateBudgetDto, userId: string) {
-    const start = new Date(dto.startDate);
-    const end   = new Date(dto.endDate);
+    const start = parseDateString(dto.startDate);
+    const end   = parseDateString(dto.endDate);
 
     const existing = await this.repo.findByUserAndPeriod(userId, dto.categoryId, start, end);
     if (existing) {
@@ -44,8 +45,8 @@ export class UpdateBudgetUseCase {
 
     return this.repo.update(id, {
       amount:         dto.amount,
-      startDate:      dto.startDate ? new Date(dto.startDate) : undefined,
-      endDate:        dto.endDate   ? new Date(dto.endDate)   : undefined,
+      startDate:      dto.startDate ? parseDateString(dto.startDate) : undefined,
+      endDate:        dto.endDate   ? parseDateString(dto.endDate)   : undefined,
       alertThreshold: dto.alertThreshold,
       isActive:       dto.isActive,
     });

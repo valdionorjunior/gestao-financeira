@@ -7,6 +7,7 @@ import { IGoalRepository, GOAL_REPOSITORY } from '../../../domain/repositories/g
 import { IAccountRepository, ACCOUNT_REPOSITORY } from '../../../domain/repositories/account.repository.interface';
 import { TransactionType, TransactionStatus } from '../../../domain/entities/transaction.entity';
 import { MonthlyReportDto, ReportFilterDto } from '../../dtos/reports/report-filter.dto';
+import { parseDateString } from '../../../common/utils/date.utils';
 
 @Injectable()
 export class DashboardSummaryUseCase {
@@ -117,8 +118,8 @@ export class CashFlowReportUseCase {
   ) {}
 
   async execute(dto: ReportFilterDto, userId: string) {
-    const start = dto.startDate ? new Date(dto.startDate) : new Date(new Date().getFullYear(), 0, 1);
-    const end   = dto.endDate   ? new Date(dto.endDate)   : new Date();
+    const start = dto.startDate ? parseDateString(dto.startDate) : new Date(new Date().getFullYear(), 0, 1);
+    const end   = dto.endDate   ? parseDateString(dto.endDate)   : new Date();
 
     const months: Array<{ year: number; month: number; income: number; expense: number; net: number }> = [];
 

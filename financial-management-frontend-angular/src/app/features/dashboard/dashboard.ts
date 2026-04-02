@@ -9,11 +9,12 @@ import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ChartModule } from 'primeng/chart';
 import { TxTypePipe } from '../../shared/pipes/label.pipes';
+import { SafeDatePipe } from '../../shared/pipes/safe-date.pipe';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, RouterLink, TableModule, TagModule, SkeletonModule, ChartModule, TxTypePipe],
+  imports: [CurrencyPipe, DatePipe, RouterLink, TableModule, TagModule, SkeletonModule, ChartModule, TxTypePipe, SafeDatePipe],
   template: `
     <div class="page-container">
 
@@ -133,7 +134,7 @@ import { TxTypePipe } from '../../shared/pipes/label.pipes';
               </ng-template>
               <ng-template pTemplate="body" let-tx>
                 <tr>
-                  <td>{{ tx.date | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ tx.date | safeDate }}</td>
                   <td>{{ tx.description || '—' }}</td>
                   <td>
                     <p-tag

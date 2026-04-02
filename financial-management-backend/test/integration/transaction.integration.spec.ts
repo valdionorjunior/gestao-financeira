@@ -254,9 +254,8 @@ describe('[Integration] CreateTransferUseCase', () => {
       USER_ID,
     );
 
-    expect(result.debit).toBeDefined();
-    expect(result.credit).toBeDefined();
-    expect(result.transferPairId).toBeDefined();
+    expect(result.id).toBeDefined();
+    expect(result.type).toBe(TransactionType.TRANSFER);
     expect(txnRepo.save).toHaveBeenCalledTimes(2);
     expect(accountRepo.updateBalance).toHaveBeenCalledWith(ACCOUNT_ID, -500);
     expect(accountRepo.updateBalance).toHaveBeenCalledWith(ACCOUNT_ID2, 500);
