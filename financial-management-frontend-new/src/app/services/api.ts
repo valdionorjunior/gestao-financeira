@@ -4,6 +4,7 @@ import {
   Account, Budget, Category, Goal, Transaction,
   FinancialSummary, User, Subcategory,
   PaginatedResult, MonthlyReport, CashFlowReport,
+  FinancialInsight, ExpensePrediction,
 } from '../types'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
@@ -203,8 +204,13 @@ class ApiClient {
   }
 
   // AI endpoints
-  async getFinancialInsights() {
-    const response = await this.client.get('/ai/insights')
+  async getFinancialInsights(): Promise<FinancialInsight[]> {
+    const response = await this.client.get<FinancialInsight[]>('/ai/insights')
+    return response.data
+  }
+
+  async getExpensePrediction(): Promise<ExpensePrediction> {
+    const response = await this.client.get<ExpensePrediction>('/ai/predict')
     return response.data
   }
 

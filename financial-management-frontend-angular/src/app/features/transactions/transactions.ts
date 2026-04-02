@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { FinanceService } from '../../core/services/finance.service';
 import type { Transaction, Category, Account } from '../../core/models';
@@ -34,7 +34,7 @@ const TX_STATUSES = [
   standalone: true,
   providers: [ConfirmationService],
   imports: [
-    CurrencyPipe, DatePipe, ReactiveFormsModule, FormsModule,
+    CurrencyPipe, ReactiveFormsModule, FormsModule,
     TableModule, ButtonModule, DialogModule,
     InputTextModule, SelectModule, DatePickerModule, InputNumberModule,
     TagModule, SkeletonModule, ConfirmDialogModule, TxTypePipe, TxStatusPipe, SafeDatePipe,
@@ -356,24 +356,38 @@ export class TransactionsComponent implements OnInit {
     }
 
     this.saving.set(true);
-    const body: Partial<Transaction> = {
-      description: v.description ?? '',
-      amount:      v.amount ?? 0,
-      date:        v.date ? (v.date as Date).toISOString().split('T')[0] : '',
-      type:        type as any,
-      status:      v.status as any,
-      accountId:   accountId ?? '',
-      categoryId:  type === 'TRANSFER' ? undefined : (categoryId ?? undefined),
-      subcategoryId: v.subcategoryId ?? undefined,
-      destinationAccountId: type === 'TRANSFER' ? destinationAccountId : undefined,
-    };
-    const op = this.editId()
-      ? this.finance.updateTransaction(this.editId()!, body)
-      : this.finance.createTransaction(body);
-    op.subscribe({
-      next: () => { this.dialogVisible = false; this.saving.set(false); this.load(); },
-      error: () => this.saving.set(false),
-    });
+
+    if (this.editId()) {
+      // UpdateTransactionDto: type e accountId NÃO são permitidos no PUT
+      const updateBody = {
+        description:   v.description ?? '',
+        amount:        v.amount ?? 0,
+        date:          v.date ? (v.date as Date).toISOString().split('T')[0] : '',
+        status:        v.status as any,
+        categoryId:    type === 'TRANSFER' ? undefined : (categoryId ?? undefined),
+        subcategoryId: v.subcategoryId ?? undefined,
+      };
+      this.finance.updateTransaction(this.editId()!, updateBody).subscribe({
+        next: () => { this.dialogVisible = false; this.saving.set(false); this.load(); },
+        error: () => this.saving.set(false),
+      });
+    } else {
+      const createBody: Partial<Transaction> = {
+        description:          v.description ?? '',
+        amount:               v.amount ?? 0,
+        date:                 v.date ? (v.date as Date).toISOString().split('T')[0] : '',
+        type:                 type as any,
+        status:               v.status as any,
+        accountId:            accountId ?? '',
+        categoryId:           type === 'TRANSFER' ? undefined : (categoryId ?? undefined),
+        subcategoryId:        v.subcategoryId ?? undefined,
+        destinationAccountId: type === 'TRANSFER' ? destinationAccountId : undefined,
+      };
+      this.finance.createTransaction(createBody).subscribe({
+        next: () => { this.dialogVisible = false; this.saving.set(false); this.load(); },
+        error: () => this.saving.set(false),
+      });
+    }
   }
 
   confirmDelete(tx: Transaction) {

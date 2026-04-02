@@ -56,7 +56,7 @@ export const Chart: FC<ChartProps> = ({
   const renderChart = () => {
     if (type === 'line') {
       return (
-        <LineChart data={data}>
+        <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis dataKey={xAxisKey || 'name'} stroke="#6b7280" />
           <YAxis stroke="#6b7280" />
@@ -88,7 +88,7 @@ export const Chart: FC<ChartProps> = ({
 
     if (type === 'bar') {
       return (
-        <BarChart data={data}>
+        <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis dataKey={xAxisKey || 'name'} stroke="#6b7280" />
           <YAxis stroke="#6b7280" />

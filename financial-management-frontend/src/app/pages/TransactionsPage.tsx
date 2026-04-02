@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Plus, ArrowDownCircle, ArrowUpCircle, ArrowLeftRight, Trash2, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Plus, ArrowDownCircle, ArrowUpCircle, ArrowLeftRight, Trash2, Pencil, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { transactionsService, accountsService, categoriesService } from '../services/finance.service';
 import { TransactionModal } from '../components/TransactionModal';
 import type { Transaction } from '../types';
@@ -79,7 +79,9 @@ export default function TransactionsPage() {
 
   const handleSaveTransaction = (data: any) => {
     if (editingTx?.id) {
-      updateMut.mutate({ id: editingTx.id, body: data });
+      // UpdateTransactionDto: apenas estes campos são permitidos no PUT
+      const { description, amount, date, dueDate, status, categoryId, subcategoryId, notes, tags } = data;
+      updateMut.mutate({ id: editingTx.id, body: { description, amount, date, dueDate, status, categoryId, subcategoryId, notes, tags } });
     } else {
       createMut.mutate(data);
     }
@@ -152,9 +154,14 @@ export default function TransactionsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => { if (confirm('Excluir?')) deleteMut.mutate(tx.id); }} className="p-1.5 rounded hover:bg-red-50 transition">
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => handleOpenModal(tx)} className="p-1.5 rounded hover:bg-blue-50 transition" title="Editar transação">
+                        <Pencil className="w-4 h-4 text-blue-400" />
+                      </button>
+                      <button onClick={() => { if (confirm('Excluir esta transação?')) deleteMut.mutate(tx.id); }} className="p-1.5 rounded hover:bg-red-50 transition" title="Excluir transação">
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

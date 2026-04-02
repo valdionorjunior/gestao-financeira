@@ -14,14 +14,7 @@ interface TransactionModalProps {
 }
 
 export function TransactionModal({ open, onClose, onSubmit, isLoading = false, editingTransaction }: TransactionModalProps) {
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<any>({
-    defaultValues: editingTransaction || {
-      type: 'EXPENSE',
-      status: 'CONFIRMED',
-      date: new Date().toISOString().split('T')[0],
-      destinationAccountId: '',
-    },
-  });
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<any>();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -32,6 +25,26 @@ export function TransactionModal({ open, onClose, onSubmit, isLoading = false, e
   const type = watch('type');
   const accountId = watch('accountId');
   const destinationAccountId = watch('destinationAccountId');
+
+  // Preenche o formulário sempre que o modal abre ou a transação muda
+  useEffect(() => {
+    if (!open) return;
+    const VALID_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELED'];
+    if (editingTransaction?.id) {
+      reset({
+        ...editingTransaction,
+        date: editingTransaction.date ? editingTransaction.date.split('T')[0] : new Date().toISOString().split('T')[0],
+        status: VALID_STATUSES.includes(editingTransaction.status ?? '') ? editingTransaction.status : 'CONFIRMED',
+      });
+    } else {
+      reset({
+        type: 'EXPENSE',
+        status: 'CONFIRMED',
+        date: new Date().toISOString().split('T')[0],
+        destinationAccountId: '',
+      });
+    }
+  }, [open, editingTransaction, reset]);
 
   const handleFormSubmit = (data: any) => {
     if (data.type === 'TRANSFER') {

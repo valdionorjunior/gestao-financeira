@@ -1,7 +1,7 @@
 import { FC, useState, useEffect, useCallback } from 'react'
 import { Chart } from '../components/Chart'
 import { apiClient } from '../services/api'
-import { MonthlyReport } from '../types'
+import { Category, MonthlyReport } from '../types'
 import { formatCurrency } from '../utils/formatters'
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -11,6 +11,7 @@ const PERIOD_MONTHS: Record<string, number> = { '1m': 1, '3m': 3, '6m': 6, '1a':
 export const ReportsPage: FC = () => {
   const [period, setPeriod] = useState('6m')
   const [reports, setReports] = useState<MonthlyReport[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadReports = useCallback(async (p: string) => {
@@ -34,13 +35,14 @@ export const ReportsPage: FC = () => {
 
   useEffect(() => {
     loadReports(period)
+    apiClient.getCategories().then(setCategories).catch(() => {})
   }, [period, loadReports])
 
   const lineChartData = reports.map((r) => ({
     month: MONTH_NAMES[r.period.month - 1],
-    income: r.income,
-    expense: r.expense,
-    savings: r.netBalance,
+    Receita: r.income,
+    Despesa: r.expense,
+    'Saldo Líquido': r.netBalance,
   }))
 
   const totalIncome  = reports.reduce((s, r) => s + r.income, 0)
@@ -50,10 +52,13 @@ export const ReportsPage: FC = () => {
 
   // Agrupa categorias do último relatório
   const lastReport = reports[reports.length - 1]
-  const categoryPieData = lastReport?.expenseByCategory?.slice(0, 6).map((c) => ({
-    name: c.categoryId.slice(0, 8),
-    value: c.total,
-  })) ?? []
+  const categoryPieData = lastReport?.expenseByCategory?.slice(0, 6).map((c) => {
+    const cat = categories.find(cat => cat.id === c.categoryId)
+    return {
+      name: cat?.name ?? c.categoryId.slice(0, 8),
+      value: c.total,
+    }
+  }) ?? []
 
   return (
     <div className="space-y-6">
@@ -93,7 +98,7 @@ export const ReportsPage: FC = () => {
               title="Receita, Despesa e Saldo Líquido"
               data={lineChartData}
               type="line"
-              dataKey={['income', 'expense', 'savings']}
+              dataKey={['Receita', 'Despesa', 'Saldo Líquido']}
               xAxisKey="month"
               colors={['#16a34a', '#ef4444', '#0284c7']}
             />

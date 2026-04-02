@@ -55,7 +55,12 @@ export const TransactionsPage: FC = () => {
     try {
       setIsLoading(true)
       if (editingTransaction?.id) {
-        await apiClient.updateTransaction(editingTransaction.id, formData)
+        // UpdateTransactionDto: apenas estes campos são permitidos no PUT
+        const { description, amount, date, dueDate, categoryId, subcategoryId, notes, tags } = formData as any
+        const VALID_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELED']
+        const rawStatus = (formData as any).status
+        const status = VALID_STATUSES.includes(rawStatus) ? rawStatus : 'CONFIRMED'
+        await apiClient.updateTransaction(editingTransaction.id, { description, amount, date, dueDate, status, categoryId, subcategoryId, notes, tags })
       } else {
         await apiClient.createTransaction(formData)
       }
@@ -66,6 +71,17 @@ export const TransactionsPage: FC = () => {
       alert('Erro ao salvar transação')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleDeleteTransaction = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta transação?')) return
+    try {
+      await apiClient.deleteTransaction(id)
+      await loadTransactions()
+    } catch (error) {
+      console.error('Erro ao excluir transação:', error)
+      alert('Erro ao excluir transação')
     }
   }
 
@@ -125,6 +141,8 @@ export const TransactionsPage: FC = () => {
         data={transactions}
         loading={loading}
         pageSize={10}
+        onEdit={(tx: Transaction) => handleOpenModal(tx)}
+        onDelete={handleDeleteTransaction}
       />
 
       <TransactionModal

@@ -39,7 +39,12 @@ export const TransactionModal: FC<TransactionModalProps> = ({
     if (isOpen) {
       loadData()
       if (transaction) {
-        setFormData(transaction)
+        // Normaliza status legado "COMPLETED" → "CONFIRMED"
+        const validStatuses = ['PENDING', 'CONFIRMED', 'CANCELED']
+        const normalizedStatus = validStatuses.includes(transaction.status ?? '')
+          ? transaction.status
+          : 'CONFIRMED'
+        setFormData({ ...transaction, status: normalizedStatus as any })
       } else {
         setFormData({
           description: '',
@@ -120,7 +125,16 @@ export const TransactionModal: FC<TransactionModalProps> = ({
     if (formData.type !== 'TRANSFER') {
       delete dataToSend.destinationAccountId
     }
-    
+    // Normalizar date para YYYY-MM-DD (remover parte de tempo se vier ISO completo)
+    if (dataToSend.date && typeof dataToSend.date === 'string') {
+      dataToSend.date = dataToSend.date.split('T')[0] as any
+    }
+    // Normalizar status legado
+    const validStatuses = ['PENDING', 'CONFIRMED', 'CANCELED']
+    if (!validStatuses.includes(dataToSend.status ?? '')) {
+      dataToSend.status = 'CONFIRMED' as any
+    }
+
     onSave(dataToSend)
   }
 
@@ -303,13 +317,13 @@ export const TransactionModal: FC<TransactionModalProps> = ({
             </label>
             <select
               name="status"
-              value={formData.status || 'COMPLETED'}
+              value={formData.status || 'CONFIRMED'}
               onChange={handleChange}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="PENDING">Pendente</option>
-              <option value="COMPLETED">Concluída</option>
-              <option value="CANCELLED">Cancelada</option>
+              <option value="CONFIRMED">Confirmada</option>
+              <option value="CANCELED">Cancelada</option>
             </select>
           </div>
 

@@ -130,3 +130,14 @@ export interface CashFlowReport {
   items: { date: string; income: number; expense: number; balance: number }[];
 }
 
+export interface FinancialInsight {
+  type: 'WARNING' | 'TIP' | 'SUCCESS';
+  title: string;
+  message: string;
+}
+
+export interface ExpensePrediction {
+  predictedNextMonth: number;
+  history: { month: string; expense: number }[];
+}
+
