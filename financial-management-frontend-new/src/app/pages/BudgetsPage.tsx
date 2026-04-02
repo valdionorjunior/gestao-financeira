@@ -24,32 +24,53 @@ export const BudgetsPage: FC = () => {
     loadBudgets()
   }, [])
 
+  const PERIOD_LABELS: Record<string, string> = {
+    MONTHLY: 'Mensal', WEEKLY: 'Semanal', YEARLY: 'Anual',
+  }
+
   const columns = [
     { key: 'name' as const, label: 'Nome' },
-    { key: 'period' as const, label: 'Período' },
     {
-      key: 'limit' as const,
-      label: 'Limite',
-      render: (limit: number) => formatCurrency(limit),
+      key: 'period' as const,
+      label: 'Período',
+      render: (period: string) => PERIOD_LABELS[period] ?? period,
     },
     {
-      key: 'spent' as const,
+      // Backend usa 'amount' (não 'limit')
+      key: 'amount' as const,
+      label: 'Limite',
+      render: (amount: number) => formatCurrency(amount),
+    },
+    {
+      // Backend usa 'spentAmount' (não 'spent')
+      key: 'spentAmount' as const,
       label: 'Gasto',
       render: (spent: number, item: Budget) => (
         <div>
-          <span className={spent > item.limit ? 'text-red-600 font-medium' : 'text-gray-900'}>
-            {formatCurrency(spent)}
+          <span className={item.isOverBudget ? 'text-red-600 font-medium' : 'text-gray-900 dark:text-gray-100'}>
+            {formatCurrency(spent)} ({item.percentUsed.toFixed(0)}%)
           </span>
           <div className="w-32 h-2 bg-gray-200 rounded-full mt-2">
             <div
-              className={`h-full rounded-full ${spent > item.limit ? 'bg-red-500' : 'bg-green-500'}`}
-              style={{ width: `${Math.min((spent / item.limit) * 100, 100)}%` }}
+              className={`h-full rounded-full ${item.isOverBudget ? 'bg-red-500' : item.percentUsed >= item.alertThreshold ? 'bg-yellow-500' : 'bg-green-500'}`}
+              style={{ width: `${Math.min(item.percentUsed, 100)}%` }}
             />
           </div>
         </div>
       ),
     },
-    { key: 'status' as const, label: 'Status' },
+    {
+      key: 'isActive' as const,
+      label: 'Status',
+      render: (isActive: boolean) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                   : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+        }`}>
+          {isActive ? 'Ativo' : 'Inativo'}
+        </span>
+      ),
+    },
   ]
 
   return (

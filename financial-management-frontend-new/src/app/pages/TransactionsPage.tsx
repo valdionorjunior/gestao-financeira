@@ -5,6 +5,18 @@ import { apiClient } from '../services/api'
 import { Transaction } from '../types'
 import { formatCurrency, formatDate } from '../utils/formatters'
 
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Pendente',
+  CONFIRMED: 'Confirmado',
+  CANCELED: 'Cancelado',
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  INCOME: 'Receita',
+  EXPENSE: 'Despesa',
+  TRANSFER: 'Transferência',
+}
+
 export const TransactionsPage: FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -19,8 +31,9 @@ export const TransactionsPage: FC = () => {
   const loadTransactions = async () => {
     try {
       setLoading(true)
-      const data = await apiClient.getTransactions()
-      setTransactions(data)
+      // Backend retorna PaginatedResult<Transaction> — extrair .data
+      const result = await apiClient.getTransactions({ limit: 50 })
+      setTransactions(Array.isArray(result) ? result : result.data)
     } catch (error) {
       console.error('Erro ao carregar transações:', error)
     } finally {
@@ -59,7 +72,11 @@ export const TransactionsPage: FC = () => {
   const columns = [
     { key: 'date' as const, label: 'Data', render: (date: string) => formatDate(date) },
     { key: 'description' as const, label: 'Descrição' },
-    { key: 'type' as const, label: 'Tipo' },
+    {
+      key: 'type' as const,
+      label: 'Tipo',
+      render: (type: string) => TYPE_LABELS[type] ?? type,
+    },
     {
       key: 'amount' as const,
       label: 'Valor',
@@ -69,7 +86,22 @@ export const TransactionsPage: FC = () => {
         </span>
       ),
     },
-    { key: 'status' as const, label: 'Status' },
+    {
+      key: 'status' as const,
+      label: 'Status',
+      render: (status: string) => {
+        const colors: Record<string, string> = {
+          CONFIRMED: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+          PENDING:   'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+          CANCELED:  'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+        }
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status] ?? 'bg-gray-100 text-gray-600'}`}>
+            {STATUS_LABELS[status] ?? status}
+          </span>
+        )
+      },
+    },
   ]
 
   return (

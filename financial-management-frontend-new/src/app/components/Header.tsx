@@ -1,7 +1,7 @@
 import { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Moon, LogOut } from 'lucide-react'
-import { useThemeStore } from '../stores/themeStore'
+import { Moon, Sun, LogOut } from 'lucide-react'
+import { useThemeStore } from '../stores/theme.store'
 import { useAuthStore } from '../stores/auth.store'
 import { cn } from '../utils/cn'
 
@@ -12,12 +12,13 @@ interface HeaderProps {
 export const Header: FC<HeaderProps> = ({ className }) => {
   const navigate = useNavigate()
   const toggleTheme = useThemeStore((state) => state.toggleTheme)
+  const theme = useThemeStore((state) => state.theme)
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
 
   const handleLogout = () => {
     logout()
-    navigate('/login')
+    navigate('/', { replace: true })
   }
 
   return (
@@ -35,27 +36,34 @@ export const Header: FC<HeaderProps> = ({ className }) => {
 
         {/* Right - Actions */}
         <div className="flex items-center gap-4">
-          {/* Theme Toggle */}
+          {/* Theme Toggle — ícone reflete o tema atual */}
           <button
             onClick={toggleTheme}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            title="Alternar tema"
+            title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
           >
-            <Moon size={20} className="text-gray-700 dark:text-gray-300" />
+            {theme === 'dark'
+              ? <Sun size={20} className="text-yellow-400" />
+              : <Moon size={20} className="text-gray-700" />
+            }
           </button>
 
           {/* User Profile */}
-          {user && (
-            <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-800">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+          {user && (() => {
+            const displayName = user.name ?? `${user.firstName} ${user.lastName}`.trim()
+            const initial = displayName.charAt(0).toUpperCase()
+            return (
+              <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-800">
+                <div className="text-right">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{displayName}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold">
+                  {initial}
+                </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold">
-                {user.name.charAt(0).toUpperCase()}
-              </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Logout Button */}
           <button

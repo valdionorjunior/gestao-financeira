@@ -13,186 +13,139 @@ import { AIPage } from './app/pages/AIPage'
 import { apiClient } from './app/services/api'
 import type { AuthStore } from './app/stores/auth.store'
 
-function App() {
-  const isAuthenticated = useAuthStore((state: AuthStore) => state.isAuthenticated)
-  const setLoading = useAuthStore((state: AuthStore) => state.setLoading)
+// ─── Rotas autenticadas ────────────────────────────────────────────
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<Layout><DashboardPage /></Layout>} />
+      <Route path="/transactions" element={<Layout><TransactionsPage /></Layout>} />
+      <Route path="/accounts" element={<Layout><AccountsPage /></Layout>} />
+      <Route path="/categories" element={<Layout><CategoriesPage /></Layout>} />
+      <Route path="/budgets" element={<Layout><BudgetsPage /></Layout>} />
+      <Route path="/goals" element={<Layout><GoalsPage /></Layout>} />
+      <Route path="/reports" element={<Layout><ReportsPage /></Layout>} />
+      <Route path="/ai" element={<Layout><AIPage /></Layout>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+// ─── Login Form ────────────────────────────────────────────────────
+function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginError, setLoginError] = useState('')
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoginError('')
+    setLoginLoading(true)
+    try {
+      const response = await apiClient.login(email, password)
+      // Persiste o token no localStorage via action do store
+      useAuthStore.getState().setToken(response.accessToken)
+      useAuthStore.setState({
+        isAuthenticated: true,
+        user: response.user,
+      })
+    } catch (error: any) {
+      const msg = error.response?.data?.message
+      setLoginError(Array.isArray(msg) ? msg.join(', ') : (msg || 'Erro ao fazer login'))
+    } finally {
+      setLoginLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">Finanças</h1>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+            {loginError && (
+              <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                {loginError}
+              </div>
+            )}
+            <button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loginLoading ? 'Carregando...' : 'Entrar'}
+            </button>
+          </div>
+        </form>
+        <p className="text-center text-gray-600 text-sm mt-4">
+          Faça login com suas credenciais para acessar o dashboard
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ─── App Principal ─────────────────────────────────────────────────
+function App() {
+  const isAuthenticated = useAuthStore((state: AuthStore) => state.isAuthenticated)
+  const isLoading = useAuthStore((state: AuthStore) => state.isLoading)
+  const setLoading = useAuthStore((state: AuthStore) => state.setLoading)
+
   useEffect(() => {
-    // Verificar se há token vál ido no localStorage
     const token = localStorage.getItem('token')
     if (token) {
-      // Tentar restaurar sessão
       apiClient.getCurrentUser()
         .then((user) => {
-          useAuthStore.setState({
-            isAuthenticated: true,
-            user,
-            token,
-          })
+          useAuthStore.setState({ isAuthenticated: true, user, token })
         })
         .catch(() => {
           localStorage.removeItem('token')
-          useAuthStore.setState({
-            isAuthenticated: false,
-            user: null,
-            token: null,
-          })
+          useAuthStore.setState({ isAuthenticated: false, user: null, token: null })
         })
-        .finally(() => {
-          setLoading(false)
-        })
+        .finally(() => setLoading(false))
     } else {
       setLoading(false)
     }
   }, [setLoading])
 
-  // Se não autenticado, redireciona para login
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">Finanças</h1>
-
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault()
-              setLoginError('')
-              setLoginLoading(true)
-
-              try {
-                const response = await apiClient.login(email, password)
-                useAuthStore.setState({
-                  isAuthenticated: true,
-                  user: response.user,
-                  token: response.accessToken,
-                })
-              } catch (error: any) {
-                const errorMessage = error.response?.data?.message || 'Erro ao fazer login'
-                setLoginError(errorMessage)
-              } finally {
-                setLoginLoading(false)
-              }
-            }}
-          >
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Senha</label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              {loginError && (
-                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-                  {loginError}
-                </div>
-              )}
-              <button
-                type="submit"
-                disabled={loginLoading}
-                className="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loginLoading ? 'Carregando...' : 'Entrar'}
-              </button>
-            </div>
-          </form>
-
-          <p className="text-center text-gray-600 text-sm mt-4">
-            Faça login com suas credenciais para acessar o dashboard
-          </p>
-        </div>
-      </div>
-    )
-  }
-
+  // BrowserRouter SEMPRE presente para que hooks de rota funcionem
+  // (useNavigate no Header, useLocation no Sidebar)
   return (
     <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <Layout>
-              <DashboardPage />
-            </Layout>
-          }
-        />
-        <Route
-          path="/transactions"
-          element={
-            <Layout>
-              <TransactionsPage />
-            </Layout>
-          }
-        />
-        <Route
-          path="/accounts"
-          element={
-            <Layout>
-              <AccountsPage />
-            </Layout>
-          }
-        />
-        <Route
-          path="/categories"
-          element={
-            <Layout>
-              <CategoriesPage />
-            </Layout>
-          }
-        />
-        <Route
-          path="/budgets"
-          element={
-            <Layout>
-              <BudgetsPage />
-            </Layout>
-          }
-        />
-        <Route
-          path="/goals"
-          element={
-            <Layout>
-              <GoalsPage />
-            </Layout>
-          }
-        />
-        <Route
-          path="/reports"
-          element={
-            <Layout>
-              <ReportsPage />
-            </Layout>
-          }
-        />
-        <Route
-          path="/ai"
-          element={
-            <Layout>
-              <AIPage />
-            </Layout>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      {isLoading ? (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-500">Carregando...</p>
+          </div>
+        </div>
+      ) : isAuthenticated ? (
+        <AppRoutes />
+      ) : (
+        <LoginPage />
+      )}
     </BrowserRouter>
   )
 }

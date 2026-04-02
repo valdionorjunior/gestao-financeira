@@ -6,9 +6,9 @@ const TX_TYPE: Record<string, string> = {
   TRANSFER: 'Transferência',
 };
 const TX_STATUS: Record<string, string> = {
-  PENDING: 'Pendente',
-  COMPLETED: 'Concluída',
-  CANCELLED: 'Cancelada',
+  PENDING:   'Pendente',
+  CONFIRMED: 'Confirmada',
+  CANCELED:  'Cancelada',
 };
 const ACCOUNT_TYPE: Record<string, string> = {
   CHECKING: 'Conta Corrente',

@@ -1,6 +1,10 @@
 import axios, { AxiosInstance } from 'axios'
 import { useAuthStore } from '../stores/auth.store'
-import { Account, Budget, Category, Goal, Transaction, FinancialSummary, User, Subcategory } from '../types'
+import {
+  Account, Budget, Category, Goal, Transaction,
+  FinancialSummary, User, Subcategory,
+  PaginatedResult, MonthlyReport, CashFlowReport,
+} from '../types'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
 
@@ -67,7 +71,8 @@ class ApiClient {
   }
 
   async updateAccount(id: string, data: Partial<Account>) {
-    const response = await this.client.put<Account>(`/accounts/${id}`, data)
+    // Backend usa PATCH, não PUT
+    const response = await this.client.patch<Account>(`/accounts/${id}`, data)
     return response.data
   }
 
@@ -110,9 +115,9 @@ class ApiClient {
     await this.client.delete(`/categories/${categoryId}/subcategories/${subcategoryId}`)
   }
 
-  // Transactions endpoints
+  // Transactions endpoints — retorna PaginatedResult<Transaction>
   async getTransactions(filters?: Record<string, any>) {
-    const response = await this.client.get<Transaction[]>('/transactions', { params: filters })
+    const response = await this.client.get<PaginatedResult<Transaction>>('/transactions', { params: filters })
     return response.data
   }
 
@@ -137,8 +142,8 @@ class ApiClient {
   }
 
   // Budgets endpoints
-  async getBudgets() {
-    const response = await this.client.get<Budget[]>('/budgets')
+  async getBudgets(active?: boolean) {
+    const response = await this.client.get<Budget[]>('/budgets', { params: active !== undefined ? { active } : undefined })
     return response.data
   }
 
@@ -176,9 +181,24 @@ class ApiClient {
     await this.client.delete(`/goals/${id}`)
   }
 
-  // Dashboard endpoints
+  // Dashboard / Reports endpoints
   async getFinancialSummary() {
-    const response = await this.client.get<FinancialSummary>('/dashboard/summary')
+    // Endpoint correto: /reports/dashboard (não /dashboard/summary)
+    const response = await this.client.get<FinancialSummary>('/reports/dashboard')
+    return response.data
+  }
+
+  async getMonthlyReport(year?: number, month?: number) {
+    const response = await this.client.get<MonthlyReport>('/reports/monthly', {
+      params: { year, month },
+    })
+    return response.data
+  }
+
+  async getCashFlow(startDate?: string, endDate?: string) {
+    const response = await this.client.get<CashFlowReport>('/reports/cash-flow', {
+      params: { startDate, endDate },
+    })
     return response.data
   }
 
@@ -195,3 +215,4 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient()
+

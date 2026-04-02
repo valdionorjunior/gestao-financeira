@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Tailwind v4: dark mode via class (substitui darkMode: 'class' do tailwind.config.js) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 * {
   @apply box-border;
 }

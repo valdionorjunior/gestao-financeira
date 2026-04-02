@@ -1,25 +1,59 @@
-import { FC, useState } from 'react'
+import { FC, useState, useEffect, useCallback } from 'react'
 import { Chart } from '../components/Chart'
+import { apiClient } from '../services/api'
+import { MonthlyReport } from '../types'
+import { formatCurrency } from '../utils/formatters'
+
+const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+const PERIOD_MONTHS: Record<string, number> = { '1m': 1, '3m': 3, '6m': 6, '1a': 12 }
 
 export const ReportsPage: FC = () => {
   const [period, setPeriod] = useState('6m')
+  const [reports, setReports] = useState<MonthlyReport[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const mockIncomeExpenseData = [
-    { month: 'Jan', income: 5000, expense: 3000, savings: 2000 },
-    { month: 'Fev', income: 5500, expense: 3200, savings: 2300 },
-    { month: 'Mar', income: 6000, expense: 3100, savings: 2900 },
-    { month: 'Abr', income: 5800, expense: 3500, savings: 2300 },
-    { month: 'Mai', income: 6200, expense: 3300, savings: 2900 },
-    { month: 'Jun', income: 6500, expense: 3200, savings: 3300 },
-  ]
+  const loadReports = useCallback(async (p: string) => {
+    setLoading(true)
+    try {
+      const count = PERIOD_MONTHS[p] ?? 6
+      const now = new Date()
+      const promises: Promise<MonthlyReport>[] = []
+      for (let i = count - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        promises.push(apiClient.getMonthlyReport(d.getFullYear(), d.getMonth() + 1))
+      }
+      const data = await Promise.all(promises)
+      setReports(data)
+    } catch (err) {
+      console.error('Erro ao carregar relatórios:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-  const mockCategoryData = [
-    { name: 'Alimentação', value: 5000 },
-    { name: 'Transporte', value: 2000 },
-    { name: 'Saúde', value: 1000 },
-    { name: 'Entretenimento', value: 800 },
-    { name: 'Outros', value: 700 },
-  ]
+  useEffect(() => {
+    loadReports(period)
+  }, [period, loadReports])
+
+  const lineChartData = reports.map((r) => ({
+    month: MONTH_NAMES[r.period.month - 1],
+    income: r.income,
+    expense: r.expense,
+    savings: r.netBalance,
+  }))
+
+  const totalIncome  = reports.reduce((s, r) => s + r.income, 0)
+  const totalExpense = reports.reduce((s, r) => s + r.expense, 0)
+  const totalSavings = totalIncome - totalExpense
+  const savingsRate  = totalIncome > 0 ? (totalSavings / totalIncome) * 100 : 0
+
+  // Agrupa categorias do último relatório
+  const lastReport = reports[reports.length - 1]
+  const categoryPieData = lastReport?.expenseByCategory?.slice(0, 6).map((c) => ({
+    name: c.categoryId.slice(0, 8),
+    value: c.total,
+  })) ?? []
 
   return (
     <div className="space-y-6">
@@ -30,7 +64,7 @@ export const ReportsPage: FC = () => {
 
       {/* Filtro de período */}
       <div className="flex gap-2">
-        {['1m', '3m', '6m', '1a'].map((p) => (
+        {(['1m', '3m', '6m', '1a'] as const).map((p) => (
           <button
             key={p}
             onClick={() => setPeriod(p)}
@@ -45,46 +79,61 @@ export const ReportsPage: FC = () => {
         ))}
       </div>
 
-      {/* Gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Chart
-          title="Receita, Despesa e Economias"
-          data={mockIncomeExpenseData}
-          type="line"
-          dataKey={['income', 'expense', 'savings']}
-          xAxisKey="month"
-          colors={['#16a34a', '#ef4444', '#0284c7']}
-        />
-
-        <Chart
-          title="Despesas por Categoria"
-          data={mockCategoryData}
-          type="pie"
-          dataKey="value"
-          colors={['#0284c7', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6']}
-        />
-      </div>
-
-      {/* Resumo de Relatório */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-800">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Receita</p>
-          <p className="text-3xl font-bold text-green-600 mt-2">R$ 34.500</p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Período selecionado</p>
+      {loading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-64 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse" />
+          ))}
         </div>
+      ) : (
+        <>
+          {/* Gráficos */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Chart
+              title="Receita, Despesa e Saldo Líquido"
+              data={lineChartData}
+              type="line"
+              dataKey={['income', 'expense', 'savings']}
+              xAxisKey="month"
+              colors={['#16a34a', '#ef4444', '#0284c7']}
+            />
 
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-800">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Despesa</p>
-          <p className="text-3xl font-bold text-red-600 mt-2">R$ 19.300</p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Período selecionado</p>
-        </div>
+            <Chart
+              title="Despesas por Categoria (Último Mês)"
+              data={categoryPieData.length > 0 ? categoryPieData : [{ name: 'Sem dados', value: 1 }]}
+              type="pie"
+              dataKey="value"
+              colors={['#0284c7', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']}
+            />
+          </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-800">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Economizado</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">R$ 14.700</p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Taxa: 42.6%</p>
-        </div>
-      </div>
+          {/* Resumo de Relatório */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-800">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Receita</p>
+              <p className="text-3xl font-bold text-green-600 mt-2">{formatCurrency(totalIncome)}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Período selecionado</p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-800">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Despesa</p>
+              <p className="text-3xl font-bold text-red-600 mt-2">{formatCurrency(totalExpense)}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Período selecionado</p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-800">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Economizado</p>
+              <p className={`text-3xl font-bold mt-2 ${totalSavings >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                {formatCurrency(totalSavings)}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                Taxa: {savingsRate.toFixed(1)}%
+              </p>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
+

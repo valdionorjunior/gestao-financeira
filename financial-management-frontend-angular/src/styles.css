@@ -348,3 +348,82 @@ a { text-decoration: none; color: inherit; transition: color var(--transition-ba
 @media (max-width: 480px) {
   .kpi-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Dark Mode ───────────────────────────────────────────── */
+html.dark {
+  color-scheme: dark;
+
+  --surface-ground:       #0f172a;
+  --surface-card:         #1e293b;
+  --surface-border:       rgba(139, 92, 246, 0.2);
+  --text-color:           #f1f5f9;
+  --text-color-secondary: #94a3b8;
+
+  --shadow-sm:  0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md:  0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-xl:  0 12px 32px rgba(0, 0, 0, 0.6);
+}
+
+html.dark body {
+  background: var(--surface-ground);
+  color: var(--text-color);
+}
+
+/* Cards & surfaces */
+html.dark .card,
+html.dark .kpi-card {
+  background: var(--surface-card);
+  border-color: var(--surface-border);
+  color: var(--text-color);
+}
+
+html.dark .page-container {
+  background: var(--surface-ground);
+}
+
+/* PrimeNG overrides for dark mode */
+html.dark .p-card {
+  background: var(--surface-card) !important;
+  color: var(--text-color) !important;
+  border-color: var(--surface-border) !important;
+}
+
+html.dark .p-inputtext,
+html.dark .p-inputnumber-input {
+  background: var(--surface-card) !important;
+  color: var(--text-color) !important;
+  border-color: rgba(139, 92, 246, 0.3) !important;
+}
+
+html.dark .p-select {
+  background: var(--surface-card) !important;
+  color: var(--text-color) !important;
+  border-color: rgba(139, 92, 246, 0.3) !important;
+}
+
+html.dark .p-datatable .p-datatable-thead > tr > th {
+  background: rgba(139, 92, 246, 0.12) !important;
+  color: var(--text-color) !important;
+  border-color: rgba(139, 92, 246, 0.2) !important;
+}
+
+html.dark .p-datatable .p-datatable-tbody > tr {
+  background: var(--surface-card) !important;
+  color: var(--text-color) !important;
+}
+
+html.dark .p-datatable .p-datatable-tbody > tr:hover {
+  background: rgba(139, 92, 246, 0.08) !important;
+}
+
+html.dark .p-dialog {
+  background: var(--surface-card) !important;
+  color: var(--text-color) !important;
+}
+
+html.dark .p-dialog .p-dialog-content {
+  background: var(--surface-card) !important;
+  color: var(--text-color) !important;
+}
+

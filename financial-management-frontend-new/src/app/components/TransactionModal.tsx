@@ -26,7 +26,8 @@ export const TransactionModal: FC<TransactionModalProps> = ({
     accountId: '',
     destinationAccountId: '',
     date: new Date().toISOString().split('T')[0],
-    status: 'COMPLETED',
+    // Backend usa CONFIRMED (não COMPLETED)
+    status: 'CONFIRMED',
   })
 
   const [categories, setCategories] = useState<Category[]>([])
@@ -49,7 +50,7 @@ export const TransactionModal: FC<TransactionModalProps> = ({
           accountId: '',
           destinationAccountId: '',
           date: new Date().toISOString().split('T')[0],
-          status: 'COMPLETED',
+          status: 'CONFIRMED',
         })
       }
     }

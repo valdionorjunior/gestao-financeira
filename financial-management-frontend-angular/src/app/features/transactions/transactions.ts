@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal, effect } from '@angular/core';
+import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { FinanceService } from '../../core/services/finance.service';
@@ -24,8 +25,8 @@ const TX_TYPES   = [
 ];
 const TX_STATUSES = [
   { label: 'Pendente',    value: 'PENDING' },
-  { label: 'Concluída',   value: 'COMPLETED' },
-  { label: 'Cancelada',   value: 'CANCELLED' },
+  { label: 'Confirmada',  value: 'CONFIRMED' },
+  { label: 'Cancelada',   value: 'CANCELED' },
 ];
 
 @Component({
@@ -126,7 +127,7 @@ const TX_STATUSES = [
               <td>
                 <p-tag
                   [value]="tx.status | txStatus"
-                  [severity]="tx.status === 'COMPLETED' ? 'success' : tx.status === 'PENDING' ? 'warn' : 'secondary'"
+                  [severity]="tx.status === 'CONFIRMED' ? 'success' : tx.status === 'PENDING' ? 'warn' : 'secondary'"
                 />
               </td>
               <td class="text-right font-semibold text-sm"
@@ -227,9 +228,10 @@ const TX_STATUSES = [
   `,
 })
 export class TransactionsComponent implements OnInit {
-  private finance = inject(FinanceService);
-  private fb      = inject(FormBuilder);
-  private confirm = inject(ConfirmationService);
+  private finance    = inject(FinanceService);
+  private fb         = inject(FormBuilder);
+  private confirm    = inject(ConfirmationService);
+  private destroyRef = inject(DestroyRef);
 
   loading    = signal(true);
   saving     = signal(false);
@@ -256,7 +258,7 @@ export class TransactionsComponent implements OnInit {
     amount:      [null as number | null],
     date:        [new Date()],
     type:        ['EXPENSE'],
-    status:      ['COMPLETED'],
+    status:      ['CONFIRMED'],
     accountId:   [''],
     categoryId:  [null as string | null],
     subcategoryId: [null as string | null],
@@ -266,17 +268,18 @@ export class TransactionsComponent implements OnInit {
   ngOnInit() {
     this.finance.getAccounts().subscribe(a => this.accounts.set(a));
     this.finance.getCategories().subscribe(c => this.categories.set(c));
-    
-    // Update subcategories when categoryId changes
-    effect(() => {
-      const catId = this.form.get('categoryId')?.value;
-      if (catId) {
-        const selected = this.categories().find(c => c.id === catId);
-        this.subcategories.set(selected?.subcategories || []);
-      } else {
-        this.subcategories.set([]);
-      }
-    });
+
+    // Reage a mudanças no FormControl (valueChanges é o correto para ReactiveFormsModule)
+    this.form.get('categoryId')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(catId => {
+        if (catId) {
+          const selected = this.categories().find(c => c.id === catId);
+          this.subcategories.set(selected?.subcategories ?? []);
+        } else {
+          this.subcategories.set([]);
+        }
+      });
 
     this.load();
   }
@@ -320,7 +323,7 @@ export class TransactionsComponent implements OnInit {
         destinationAccountId: (tx as any).destinationAccountId ?? null,
       });
     } else {
-      this.form.reset({ date: new Date(), type: 'EXPENSE', status: 'COMPLETED' });
+      this.form.reset({ date: new Date(), type: 'EXPENSE', status: 'CONFIRMED' });
       this.subcategories.set([]);
     }
     this.dialogVisible = true;

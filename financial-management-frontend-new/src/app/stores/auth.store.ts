@@ -17,12 +17,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
   isLoading: true,
   isAuthenticated: false,
   token: localStorage.getItem('token'),
-  
+
   setUser: (user) => set({
     user,
     isAuthenticated: !!user,
   }),
-  
+
   setToken: (token) => {
     if (token) {
       localStorage.setItem('token', token)
@@ -31,12 +31,15 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
     set({ token })
   },
-  
+
   setLoading: (loading) => set({ isLoading: loading }),
-  
-  logout: () => set({
-    user: null,
-    token: null,
-    isAuthenticated: false,
-  }),
+
+  logout: () => {
+    localStorage.removeItem('token')
+    set({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+    })
+  },
 }))

@@ -24,6 +24,10 @@ export const GoalsPage: FC = () => {
     loadGoals()
   }, [])
 
+  const GOAL_STATUS_LABELS: Record<string, string> = {
+    ACTIVE: 'Ativa', COMPLETED: 'Concluída', CANCELLED: 'Cancelada',
+  }
+
   const columns = [
     { key: 'name' as const, label: 'Nome' },
     {
@@ -33,25 +37,43 @@ export const GoalsPage: FC = () => {
     },
     {
       key: 'currentAmount' as const,
-      label: 'Atual',
+      label: 'Progresso',
       render: (amount: number, item: Goal) => (
         <div>
-          <span className="font-medium text-green-600">{formatCurrency(amount)}</span>
+          <span className="font-medium text-green-600">
+            {formatCurrency(amount)} ({item.progressPercent?.toFixed(0) ?? 0}%)
+          </span>
           <div className="w-32 h-2 bg-gray-200 rounded-full mt-2">
             <div
-              className="h-full bg-blue-500 rounded-full"
-              style={{ width: `${Math.min((amount / item.targetAmount) * 100, 100)}%` }}
+              className={`h-full rounded-full ${item.isAchieved ? 'bg-green-500' : 'bg-blue-500'}`}
+              style={{ width: `${Math.min(item.progressPercent ?? 0, 100)}%` }}
             />
           </div>
         </div>
       ),
     },
     {
-      key: 'dueDate' as const,
+      // Backend usa targetDate (não dueDate)
+      key: 'targetDate' as const,
       label: 'Prazo',
-      render: (date: string) => formatDate(date),
+      render: (date: string) => date ? formatDate(date) : '—',
     },
-    { key: 'status' as const, label: 'Status' },
+    {
+      key: 'status' as const,
+      label: 'Status',
+      render: (status: string) => {
+        const colors: Record<string, string> = {
+          ACTIVE:    'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+          COMPLETED: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+          CANCELLED: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+        }
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status] ?? 'bg-gray-100 text-gray-600'}`}>
+            {GOAL_STATUS_LABELS[status] ?? status}
+          </span>
+        )
+      },
+    },
   ]
 
   return (
