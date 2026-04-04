@@ -11,37 +11,37 @@ import { ButtonModule } from 'primeng/button';
   standalone: true,
   imports: [ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule],
   template: `
-    <div class="min-h-screen bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
-      <div class="bg-white dark:bg-[var(--color-surface)] rounded-2xl shadow-2xl p-8 max-w-md w-full">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-[var(--color-text)] mb-6 text-center">Finanças</h1>
+    <div class="min-h-screen bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-[var(--color-surface)] rounded-2xl shadow-2xl p-10 max-w-md w-full">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-[var(--color-text)] mb-8 text-center">Finanças</h1>
         <form [formGroup]="form" (ngSubmit)="submit()">
-          <div class="space-y-4">
+          <div class="space-y-6">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-[var(--color-text)] mb-2">Email</label>
               <input
                 pInputText
                 type="email"
                 formControlName="email"
-                placeholder="seu@email.com"
-                class="w-full px-4 py-2 border border-gray-300 dark:border-[var(--color-border)] rounded-lg bg-white dark:bg-[var(--color-surface)] text-gray-900 dark:text-[var(--color-text)] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Email"
+                class="w-full px-4 py-3 border border-gray-300 dark:border-[var(--color-border)] rounded-lg bg-white dark:bg-[var(--color-surface)] text-gray-900 dark:text-[var(--color-text)] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
               @if (form.controls.email.invalid && form.controls.email.touched) {
-                <small class="text-red-500">E-mail inválido</small>
+                <small class="text-red-500 mt-1 block">E-mail inválido</small>
               }
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-[var(--color-text)] mb-2">Senha</label>
-              <p-password
-                formControlName="password"
-                placeholder="••••••••"
-                [feedback]="false"
-                [toggleMask]="true"
-                styleClass="w-full"
-                inputStyleClass="w-full px-4 py-2 border border-gray-300 dark:border-[var(--color-border)] rounded-lg bg-white dark:bg-[var(--color-surface)] text-gray-900 dark:text-[var(--color-text)] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div class="relative">
+                <p-password
+                  formControlName="password"
+                  placeholder="Password"
+                  [feedback]="false"
+                  [toggleMask]="true"
+                  styleClass="w-full"
+                  inputStyleClass="w-full px-4 py-3 border border-gray-300 dark:border-[var(--color-border)] rounded-lg bg-white dark:bg-[var(--color-surface)] text-gray-900 dark:text-[var(--color-text)] focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                />
+              </div>
               @if (form.controls.password.invalid && form.controls.password.touched) {
-                <small class="text-red-500">Senha obrigatória</small>
+                <small class="text-red-500 mt-1 block">Senha obrigatória</small>
               }
             </div>
             @if (error()) {
@@ -52,16 +52,16 @@ import { ButtonModule } from 'primeng/button';
             <button
               type="submit"
               [disabled]="form.invalid || loading()"
-              class="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               @if (loading()) {
                 <i class="pi pi-spinner pi-spin mr-2"></i>
               }
-              {{ loading() ? 'Carregando...' : 'Entrar' }}
+              {{ loading() ? 'Carregando...' : 'Log in' }}
             </button>
           </div>
         </form>
-        <p class="text-center text-gray-600 dark:text-[var(--color-text-muted)] text-sm mt-4">
+        <p class="text-center text-gray-600 dark:text-[var(--color-text-muted)] text-sm mt-6">
           Faça login com suas credenciais para acessar o dashboard
         </p>
       </div>
