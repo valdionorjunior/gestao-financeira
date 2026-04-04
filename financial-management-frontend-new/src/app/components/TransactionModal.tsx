@@ -125,6 +125,10 @@ export const TransactionModal: FC<TransactionModalProps> = ({
     if (formData.type !== 'TRANSFER') {
       delete dataToSend.destinationAccountId
     }
+    // Não enviar subcategoryId se estiver vazio
+    if (!dataToSend.subcategoryId || dataToSend.subcategoryId === '') {
+      delete dataToSend.subcategoryId
+    }
     // Normalizar date para YYYY-MM-DD (remover parte de tempo se vier ISO completo)
     if (dataToSend.date && typeof dataToSend.date === 'string') {
       dataToSend.date = dataToSend.date.split('T')[0] as any

@@ -64,6 +64,10 @@ export function TransactionModal({ open, onClose, onSubmit, isLoading = false, e
       // Não enviar destinationAccountId se não for transferência
       delete data.destinationAccountId;
     }
+    // Não enviar subcategoryId se estiver vazio
+    if (!data.subcategoryId || data.subcategoryId === '') {
+      delete data.subcategoryId;
+    }
     onSubmit(data);
   };
 

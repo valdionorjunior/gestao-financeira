@@ -365,7 +365,7 @@ export class TransactionsComponent implements OnInit {
         date:          v.date ? (v.date as Date).toISOString().split('T')[0] : '',
         status:        v.status as any,
         categoryId:    type === 'TRANSFER' ? undefined : (categoryId ?? undefined),
-        subcategoryId: v.subcategoryId ?? undefined,
+        subcategoryId: v.subcategoryId || undefined,
       };
       this.finance.updateTransaction(this.editId()!, updateBody).subscribe({
         next: () => { this.dialogVisible = false; this.saving.set(false); this.load(); },
@@ -380,7 +380,7 @@ export class TransactionsComponent implements OnInit {
         status:               v.status as any,
         accountId:            accountId ?? '',
         categoryId:           type === 'TRANSFER' ? undefined : (categoryId ?? undefined),
-        subcategoryId:        v.subcategoryId ?? undefined,
+        subcategoryId:        v.subcategoryId || undefined,
         destinationAccountId: type === 'TRANSFER' ? destinationAccountId : undefined,
       };
       this.finance.createTransaction(createBody).subscribe({
