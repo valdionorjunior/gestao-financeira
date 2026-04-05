@@ -1,6 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ThemeService } from '../../../core/services/theme.service';
+import { NotificationsService } from '../../../core/services/notifications.service';
+import { FinanceService } from '../../../core/services/finance.service';
 
 interface NavItem { label: string; icon: string; route: string; }
 
@@ -53,6 +56,59 @@ interface NavItem { label: string; icon: string; route: string; }
       <div class="main-content">
         <header class="topbar">
           <div class="topbar-right">
+            <!-- Dark mode toggle -->
+            <button class="topbar-btn" (click)="theme.toggle()"
+                    [attr.title]="theme.isDark() ? 'Mudar para modo claro' : 'Mudar para modo escuro'"
+                    [attr.aria-label]="theme.isDark() ? 'Modo claro' : 'Modo escuro'">
+              <i class="pi" [class.pi-sun]="theme.isDark()" [class.pi-moon]="!theme.isDark()"></i>
+            </button>
+
+            <!-- Notification bell -->
+            <div class="notif-wrapper">
+              <button class="topbar-btn" (click)="toggleNotifPanel()" aria-label="Notificações">
+                <i class="pi pi-bell"></i>
+                @if (notifSvc.unreadCount() > 0) {
+                  <span class="notif-badge">{{ notifSvc.unreadCount() }}</span>
+                }
+              </button>
+
+              @if (showNotifPanel()) {
+                <div class="notif-panel" role="dialog" aria-label="Painel de notificações">
+                  <div class="notif-panel-header">
+                    <span>Notificações</span>
+                    @if (notifSvc.unreadCount() > 0) {
+                      <button (click)="notifSvc.markAllRead()">Marcar todas como lidas</button>
+                    }
+                  </div>
+
+                  @if (notifSvc.notifications().length === 0) {
+                    <div class="notif-empty">
+                      <i class="pi pi-check-circle"></i>
+                      <span>Nenhuma notificação</span>
+                    </div>
+                  } @else {
+                    @for (n of notifSvc.notifications(); track n.id) {
+                      <div class="notif-item" [class.unread]="!n.read" (click)="notifSvc.markRead(n.id)">
+                        <i class="pi notif-icon"
+                           [class.pi-chart-pie]="n.type === 'budget_alert'"
+                           [class.pi-flag]="n.type === 'goal_deadline'"
+                           [class.pi-info-circle]="n.type === 'info'"
+                           [class.budget]="n.type === 'budget_alert'"
+                           [class.goal]="n.type === 'goal_deadline'"></i>
+                        <div class="notif-text">
+                          <strong>{{ n.title }}</strong>
+                          <p>{{ n.message }}</p>
+                        </div>
+                        @if (!n.read) {
+                          <span class="notif-dot"></span>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+              }
+            </div>
+
             <span class="user-greeting">
               Olá, <strong>{{ auth.user()?.firstName ?? 'Usuário' }}</strong>
             </span>
@@ -224,7 +280,7 @@ interface NavItem { label: string; icon: string; route: string; }
     /* ── Topbar ──────────────────────────────────────────── */
     .topbar {
       height: var(--topbar-height, 64px);
-      background: white;
+      background: var(--surface-card, white);
       border-bottom: 1px solid rgba(139, 92, 246, 0.1);
       display: flex;
       align-items: center;
@@ -234,6 +290,7 @@ interface NavItem { label: string; icon: string; route: string; }
       top: 0;
       z-index: 50;
       box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.12));
+      transition: background var(--transition-base, 250ms ease);
     }
 
     .topbar-right {
@@ -244,11 +301,11 @@ interface NavItem { label: string; icon: string; route: string; }
 
     .user-greeting {
       font-size: 0.9rem;
-      color: #64748b;
+      color: var(--text-color-secondary, #64748b);
     }
 
     .user-greeting strong {
-      color: #1e293b;
+      color: var(--text-color, #1e293b);
       font-weight: 700;
     }
 
@@ -273,6 +330,151 @@ interface NavItem { label: string; icon: string; route: string; }
       box-shadow: var(--shadow-glow, 0 0 20px rgba(139, 92, 246, 0.3));
     }
 
+    /* ── Topbar buttons ──────────────────────────────────── */
+    .topbar-btn {
+      position: relative;
+      width: 38px; height: 38px;
+      border-radius: var(--radius-md, 16px);
+      background: var(--surface-ground, #f8fafc);
+      border: 1px solid rgba(139, 92, 246, 0.15);
+      color: var(--text-color-secondary, #64748b);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      transition: all var(--transition-base, 250ms ease);
+    }
+
+    .topbar-btn:hover {
+      background: rgba(139, 92, 246, 0.1);
+      color: var(--primary, #6366f1);
+      border-color: rgba(139, 92, 246, 0.3);
+      transform: scale(1.05);
+    }
+
+    /* ── Notification badge ──────────────────────────────── */
+    .notif-badge {
+      position: absolute;
+      top: -4px; right: -4px;
+      min-width: 18px; height: 18px;
+      background: #ef4444;
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      border-radius: 999px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 3px;
+      border: 2px solid var(--surface-card, white);
+    }
+
+    /* ── Notification wrapper & panel ───────────────────── */
+    .notif-wrapper { position: relative; }
+
+    .notif-panel {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      width: 340px;
+      background: var(--surface-card, white);
+      border: 1px solid rgba(139, 92, 246, 0.15);
+      border-radius: var(--radius-lg, 24px);
+      box-shadow: var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.16));
+      overflow: hidden;
+      z-index: 200;
+      animation: slideDown var(--transition-base, 250ms ease) forwards;
+    }
+
+    .notif-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-color, #1e293b);
+    }
+
+    .notif-panel-header button {
+      background: none;
+      border: none;
+      color: var(--primary, #6366f1);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-md, 16px);
+      transition: background var(--transition-fast, 150ms ease);
+    }
+
+    .notif-panel-header button:hover { background: rgba(139, 92, 246, 0.1); }
+
+    .notif-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.875rem 1.25rem;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.06);
+      transition: background var(--transition-fast, 150ms ease);
+      position: relative;
+    }
+
+    .notif-item:last-child { border-bottom: none; }
+
+    .notif-item:hover { background: rgba(139, 92, 246, 0.04); }
+
+    .notif-item.unread { background: rgba(139, 92, 246, 0.05); }
+
+    .notif-icon {
+      font-size: 1.1rem;
+      margin-top: 2px;
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .notif-icon.budget { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+    .notif-icon.goal   { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+
+    .notif-text { flex: 1; min-width: 0; }
+
+    .notif-text strong {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-color, #1e293b);
+      margin-bottom: 0.2rem;
+    }
+
+    .notif-text p {
+      font-size: 0.78rem;
+      color: var(--text-color-secondary, #64748b);
+      margin: 0;
+      white-space: normal;
+      line-height: 1.4;
+    }
+
+    .notif-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--primary, #6366f1);
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .notif-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 2rem;
+      color: var(--text-color-secondary, #64748b);
+      font-size: 0.85rem;
+    }
+
+    .notif-empty .pi { font-size: 2rem; color: #10b981; }
+
     .content-area {
       flex: 1;
       padding: 0;
@@ -295,8 +497,37 @@ interface NavItem { label: string; icon: string; route: string; }
   `],
 })
 export class ShellComponent {
-  auth = inject(AuthService);
-  collapsed = signal(false);
+  auth     = inject(AuthService);
+  theme    = inject(ThemeService);
+  notifSvc = inject(NotificationsService);
+  private finance = inject(FinanceService);
+
+  collapsed      = signal(false);
+  showNotifPanel = signal(false);
+
+  constructor() {
+    this.finance.getDashboard().subscribe({
+      next: (data) => {
+        this.notifSvc.loadFromDashboard(
+          data.budgetAlerts ?? [],
+          data.goalsSummary?.nearDue ?? [],
+        );
+      },
+      error: () => { /* silent — panel shows empty state */ },
+    });
+  }
+
+  toggleNotifPanel(): void {
+    this.showNotifPanel.update(v => !v);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.notif-wrapper')) {
+      this.showNotifPanel.set(false);
+    }
+  }
 
   navItems: NavItem[] = [
     { label: 'Dashboard',          icon: 'pi pi-th-large',              route: '/dashboard' },

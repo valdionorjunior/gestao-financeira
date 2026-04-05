@@ -1,97 +1,71 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
-import { MessageModule } from 'primeng/message';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, InputTextModule, PasswordModule, ButtonModule, MessageModule],
+  imports: [ReactiveFormsModule, InputTextModule, PasswordModule, ButtonModule],
   template: `
-    <!-- Soft UI Dashboard: gradient full-screen background -->
-    <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
-         style="background: linear-gradient(135deg, #635BFF 0%, #5B8DEF 50%, #00E5E5 100%)">
-
-      <!-- decorative blobs -->
-      <div class="absolute top-[-10%] right-[-5%] w-72 h-72 rounded-full opacity-20"
-           style="background: radial-gradient(circle, #fff 0%, transparent 70%)"></div>
-      <div class="absolute bottom-[-15%] left-[-8%] w-96 h-96 rounded-full opacity-15"
-           style="background: radial-gradient(circle, #00E5E5 0%, transparent 70%)"></div>
-
-      <div class="w-full max-w-md animate-fade-in-up relative z-10">
-
-        <!-- Glass card -->
-        <div class="bg-white dark:bg-[var(--color-surface)] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] p-8 border border-white/30 backdrop-blur-xl">
-
-          <!-- Logo badge + title -->
-          <div class="flex flex-col items-center mb-8">
-            <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-[0_8px_24px_rgba(99,91,255,0.45)]"
-                 style="background: linear-gradient(135deg, #635BFF 0%, #00E5E5 100%)">
-              <i class="pi pi-wallet text-white text-2xl"></i>
-            </div>
-            <h1 class="text-2xl font-bold text-[var(--color-text)]">FinanceApp</h1>
-            <p class="text-sm text-[var(--color-text-muted)] mt-1">Bem-vindo de volta!</p>
-          </div>
-
-          <!-- Error -->
-          @if (error()) {
-            <p-message severity="error" [text]="error()!" styleClass="w-full mb-4" />
-          }
-
-          <!-- Form -->
-          <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-5">
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">E-mail</label>
+    <div class="min-h-screen bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-[var(--color-surface)] rounded-2xl shadow-2xl p-8 max-w-md w-full">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-[var(--color-text)] mb-6 text-center">Finanças</h1>
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-[var(--color-text)] mb-2">Email</label>
               <input
                 pInputText
                 type="email"
                 formControlName="email"
                 placeholder="seu@email.com"
-                class="w-full rounded-xl"
+                class="w-full px-4 py-2.5 border border-gray-300 dark:border-[var(--color-border)] rounded-lg bg-white dark:bg-[var(--color-surface)] text-gray-900 dark:text-[var(--color-text)] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
               />
               @if (form.controls.email.invalid && form.controls.email.touched) {
-                <small class="text-[var(--color-expense)]">E-mail inválido</small>
+                <small class="text-red-500">E-mail inválido</small>
               }
             </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Senha</label>
-              <p-password
-                formControlName="password"
-                placeholder="Sua senha"
-                [feedback]="false"
-                [toggleMask]="true"
-                styleClass="w-full"
-                inputStyleClass="w-full rounded-xl"
-              />
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-[var(--color-text)] mb-2">Senha</label>
+              <div class="relative">
+                <p-password
+                  formControlName="password"
+                  placeholder="Sua senha"
+                  [feedback]="false"
+                  [toggleMask]="true"
+                  styleClass="w-full"
+                  inputStyleClass="w-full px-4 py-2.5 border border-gray-300 dark:border-[var(--color-border)] rounded-lg bg-white dark:bg-[var(--color-surface)] text-gray-900 dark:text-[var(--color-text)] focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                />
+              </div>
               @if (form.controls.password.invalid && form.controls.password.touched) {
-                <small class="text-[var(--color-expense)]">Senha obrigatória</small>
+                <small class="text-red-500">Senha obrigatória</small>
               }
             </div>
-
+            @if (error()) {
+              <div class="p-3 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 rounded-lg text-sm">
+                {{ error() }}
+              </div>
+            }
             <button
               type="submit"
               [disabled]="form.invalid || loading()"
-              class="w-full mt-1 py-3 px-6 rounded-xl text-white font-semibold text-sm shadow-[0_4px_15px_rgba(99,91,255,0.4)] hover:shadow-[0_8px_24px_rgba(99,91,255,0.5)] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-              style="background: linear-gradient(135deg, #635BFF 0%, #5B8DEF 100%)"
+              class="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               @if (loading()) {
                 <i class="pi pi-spinner pi-spin mr-2"></i>
               }
-              Entrar
+              {{ loading() ? 'Carregando...' : 'Entrar' }}
             </button>
-          </form>
-
-          <p class="text-center text-sm text-[var(--color-text-muted)] mt-6">
-            Não tem conta?
-            <a routerLink="/register" class="text-[var(--color-primary)] hover:underline font-semibold">Cadastre-se</a>
-          </p>
-        </div>
+          </div>
+        </form>
+        <p class="text-center text-gray-600 dark:text-[var(--color-text-muted)] text-sm mt-4">
+          Faça login com suas credenciais para acessar o dashboard
+        </p>
       </div>
     </div>
   `,

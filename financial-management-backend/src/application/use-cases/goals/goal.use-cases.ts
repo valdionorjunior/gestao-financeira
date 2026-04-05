@@ -7,6 +7,7 @@ import {
 } from '../../../domain/repositories/goal.repository.interface';
 import { GoalStatus } from '../../../domain/entities/budget-goal.entity';
 import { CreateGoalDto, UpdateGoalDto, AddContributionDto } from '../../dtos/goals/goal.dto';
+import { parseDateString } from '../../../common/utils/date.utils';
 
 @Injectable()
 export class CreateGoalUseCase {
@@ -21,7 +22,7 @@ export class CreateGoalUseCase {
       description:  dto.description,
       targetAmount: dto.targetAmount,
       currentAmount: 0,
-      targetDate:   dto.targetDate ? new Date(dto.targetDate) : undefined,
+      targetDate:   dto.targetDate ? parseDateString(dto.targetDate) : undefined,
       color:        dto.color ?? '#17c1e8',
       icon:         dto.icon,
       status:       GoalStatus.ACTIVE,
@@ -41,7 +42,7 @@ export class UpdateGoalUseCase {
       name:         dto.name,
       description:  dto.description,
       targetAmount: dto.targetAmount,
-      targetDate:   dto.targetDate ? new Date(dto.targetDate) : undefined,
+      targetDate:   dto.targetDate ? parseDateString(dto.targetDate) : undefined,
       status:       dto.status,
       color:        dto.color,
     });
@@ -104,7 +105,7 @@ export class AddGoalContributionUseCase {
       userId,
       amount: dto.amount,
       notes:  dto.notes,
-      date:   new Date(dto.date),
+      date:   parseDateString(dto.date),
     });
 
     await this.goalRepo.updateCurrentAmount(goalId, dto.amount);

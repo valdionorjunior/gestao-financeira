@@ -53,6 +53,7 @@ export interface Transaction {
   accountId: string;
   categoryId?: string;
   subcategoryId?: string;
+  destinationAccountId?: string;
   tags?: string[];
 }
 
@@ -91,7 +92,12 @@ export interface DashboardSummary {
   monthlyExpense: number;
   netBalance: number;
   accountsCount?: number;
-  budgetAlerts?: { id: string; categoryId: string; percentUsed: number }[];
+  budgetAlerts?: { id: string; categoryId: string; categoryName?: string; percentUsed: number; spent?: number; limit?: number }[];
+  goalsSummary?: {
+    total?: number;
+    achieved?: number;
+    nearDue?: { id: string; name?: string; daysLeft?: number; progressPercent?: number }[];
+  };
 }
 
 export interface FinancialInsight {

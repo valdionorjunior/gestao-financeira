@@ -1,5 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { CurrencyPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { FinanceService } from '../../core/services/finance.service';
 import type { Transaction, Category, Account } from '../../core/models';
@@ -15,6 +16,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { TxTypePipe, TxStatusPipe } from '../../shared/pipes/label.pipes';
+import { SafeDatePipe } from '../../shared/pipes/safe-date.pipe';
 
 const TX_TYPES   = [
   { label: 'Receita',        value: 'INCOME' },
@@ -23,8 +25,8 @@ const TX_TYPES   = [
 ];
 const TX_STATUSES = [
   { label: 'Pendente',    value: 'PENDING' },
-  { label: 'Concluída',   value: 'COMPLETED' },
-  { label: 'Cancelada',   value: 'CANCELLED' },
+  { label: 'Confirmada',  value: 'CONFIRMED' },
+  { label: 'Cancelada',   value: 'CANCELED' },
 ];
 
 @Component({
@@ -32,10 +34,10 @@ const TX_STATUSES = [
   standalone: true,
   providers: [ConfirmationService],
   imports: [
-    CurrencyPipe, DatePipe, ReactiveFormsModule, FormsModule,
+    CurrencyPipe, ReactiveFormsModule, FormsModule,
     TableModule, ButtonModule, DialogModule,
     InputTextModule, SelectModule, DatePickerModule, InputNumberModule,
-    TagModule, SkeletonModule, ConfirmDialogModule, TxTypePipe, TxStatusPipe,
+    TagModule, SkeletonModule, ConfirmDialogModule, TxTypePipe, TxStatusPipe, SafeDatePipe,
   ],
   template: `
     <div class="page-container">
@@ -113,7 +115,7 @@ const TX_STATUSES = [
                   {{ tx.description }}
                 </span>
               </td>
-              <td class="text-sm text-[var(--color-text-muted)]">{{ tx.date | date:'dd/MM/yyyy' }}</td>
+              <td class="text-sm text-[var(--color-text-muted)]">{{ tx.date | safeDate }}</td>
               <td>
                 <!-- Chip semântico com cor CSS var (não depende apenas de verde/vermelho) -->
                 <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
@@ -125,7 +127,7 @@ const TX_STATUSES = [
               <td>
                 <p-tag
                   [value]="tx.status | txStatus"
-                  [severity]="tx.status === 'COMPLETED' ? 'success' : tx.status === 'PENDING' ? 'warn' : 'secondary'"
+                  [severity]="tx.status === 'CONFIRMED' ? 'success' : tx.status === 'PENDING' ? 'warn' : 'secondary'"
                 />
               </td>
               <td class="text-right font-semibold text-sm"
@@ -189,10 +191,31 @@ const TX_STATUSES = [
           <p-select [options]="accounts()" optionLabel="name" optionValue="id" formControlName="accountId" placeholder="Selecione" styleClass="w-full" />
         </div>
 
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-[var(--text-color)]">Categoria</label>
-          <p-select [options]="categories()" optionLabel="name" optionValue="id" formControlName="categoryId" placeholder="Selecione" [showClear]="true" styleClass="w-full" />
-        </div>
+        @if (form.get('type')?.value === 'TRANSFER') {
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-[var(--text-color)]">Conta de Destino</label>
+            <p-select 
+              [options]="accounts().filter(a => a.id !== form.get('accountId')?.value)" 
+              optionLabel="name" 
+              optionValue="id" 
+              formControlName="destinationAccountId" 
+              placeholder="Selecione" 
+              styleClass="w-full" 
+            />
+          </div>
+        } @else {
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-[var(--text-color)]">Categoria</label>
+            <p-select [options]="categories()" optionLabel="name" optionValue="id" formControlName="categoryId" placeholder="Selecione" [showClear]="true" styleClass="w-full" />
+          </div>
+
+          @if (subcategories().length > 0) {
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-[var(--text-color)]">Subcategoria</label>
+              <p-select [options]="subcategories()" optionLabel="name" optionValue="id" formControlName="subcategoryId" placeholder="Selecione" [showClear]="true" styleClass="w-full" />
+            </div>
+          }
+        }
 
         <div class="flex justify-end gap-2 pt-2">
           <p-button label="Cancelar" [text]="true" (onClick)="dialogVisible = false" />
@@ -205,9 +228,10 @@ const TX_STATUSES = [
   `,
 })
 export class TransactionsComponent implements OnInit {
-  private finance = inject(FinanceService);
-  private fb      = inject(FormBuilder);
-  private confirm = inject(ConfirmationService);
+  private finance    = inject(FinanceService);
+  private fb         = inject(FormBuilder);
+  private confirm    = inject(ConfirmationService);
+  private destroyRef = inject(DestroyRef);
 
   loading    = signal(true);
   saving     = signal(false);
@@ -215,6 +239,7 @@ export class TransactionsComponent implements OnInit {
   total      = signal(0);
   accounts   = signal<Account[]>([]);
   categories = signal<Category[]>([]);
+  subcategories = signal<any[]>([]);
   editId     = signal<string | null>(null);
   dialogVisible = false;
 
@@ -233,14 +258,29 @@ export class TransactionsComponent implements OnInit {
     amount:      [null as number | null],
     date:        [new Date()],
     type:        ['EXPENSE'],
-    status:      ['COMPLETED'],
+    status:      ['CONFIRMED'],
     accountId:   [''],
     categoryId:  [null as string | null],
+    subcategoryId: [null as string | null],
+    destinationAccountId: [null as string | null],
   });
 
   ngOnInit() {
     this.finance.getAccounts().subscribe(a => this.accounts.set(a));
     this.finance.getCategories().subscribe(c => this.categories.set(c));
+
+    // Reage a mudanças no FormControl (valueChanges é o correto para ReactiveFormsModule)
+    this.form.get('categoryId')!.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(catId => {
+        if (catId) {
+          const selected = this.categories().find(c => c.id === catId);
+          this.subcategories.set(selected?.subcategories ?? []);
+        } else {
+          this.subcategories.set([]);
+        }
+      });
+
     this.load();
   }
 
@@ -279,33 +319,75 @@ export class TransactionsComponent implements OnInit {
         status:      tx.status,
         accountId:   tx.accountId,
         categoryId:  tx.categoryId ?? null,
+        subcategoryId: tx.subcategoryId ?? null,
+        destinationAccountId: (tx as any).destinationAccountId ?? null,
       });
     } else {
-      this.form.reset({ date: new Date(), type: 'EXPENSE', status: 'COMPLETED' });
+      this.form.reset({ date: new Date(), type: 'EXPENSE', status: 'CONFIRMED' });
+      this.subcategories.set([]);
     }
     this.dialogVisible = true;
   }
 
   save() {
     if (this.form.invalid) return;
-    this.saving.set(true);
+    
     const v = this.form.value;
-    const body: Partial<Transaction> = {
-      description: v.description ?? '',
-      amount:      v.amount ?? 0,
-      date:        v.date ? (v.date as Date).toISOString().split('T')[0] : '',
-      type:        v.type as any,
-      status:      v.status as any,
-      accountId:   v.accountId ?? '',
-      categoryId:  v.categoryId ?? undefined,
-    };
-    const op = this.editId()
-      ? this.finance.updateTransaction(this.editId()!, body)
-      : this.finance.createTransaction(body);
-    op.subscribe({
-      next: () => { this.dialogVisible = false; this.saving.set(false); this.load(); },
-      error: () => this.saving.set(false),
-    });
+    const type = v.type as string;
+    const accountId = v.accountId as string;
+    const destinationAccountId = v.destinationAccountId as string;
+    const categoryId = v.categoryId as string;
+
+    // Validate transfer-specific requirements
+    if (type === 'TRANSFER') {
+      if (!destinationAccountId) {
+        alert('Selecione a conta de destino para transferências');
+        return;
+      }
+      if (accountId === destinationAccountId) {
+        alert('A conta de origem não pode ser igual à conta de destino');
+        return;
+      }
+    } else {
+      if (!categoryId) {
+        alert('Selecione uma categoria');
+        return;
+      }
+    }
+
+    this.saving.set(true);
+
+    if (this.editId()) {
+      // UpdateTransactionDto: type e accountId NÃO são permitidos no PUT
+      const updateBody = {
+        description:   v.description ?? '',
+        amount:        v.amount ?? 0,
+        date:          v.date ? (v.date as Date).toISOString().split('T')[0] : '',
+        status:        v.status as any,
+        categoryId:    type === 'TRANSFER' ? undefined : (categoryId ?? undefined),
+        subcategoryId: v.subcategoryId || undefined,
+      };
+      this.finance.updateTransaction(this.editId()!, updateBody).subscribe({
+        next: () => { this.dialogVisible = false; this.saving.set(false); this.load(); },
+        error: () => this.saving.set(false),
+      });
+    } else {
+      const createBody: Partial<Transaction> = {
+        description:          v.description ?? '',
+        amount:               v.amount ?? 0,
+        date:                 v.date ? (v.date as Date).toISOString().split('T')[0] : '',
+        type:                 type as any,
+        status:               v.status as any,
+        accountId:            accountId ?? '',
+        categoryId:           type === 'TRANSFER' ? undefined : (categoryId ?? undefined),
+        subcategoryId:        v.subcategoryId || undefined,
+        destinationAccountId: type === 'TRANSFER' ? destinationAccountId : undefined,
+      };
+      this.finance.createTransaction(createBody).subscribe({
+        next: () => { this.dialogVisible = false; this.saving.set(false); this.load(); },
+        error: () => this.saving.set(false),
+      });
+    }
   }
 
   confirmDelete(tx: Transaction) {

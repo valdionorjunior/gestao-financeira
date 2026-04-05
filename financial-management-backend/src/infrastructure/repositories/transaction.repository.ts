@@ -6,6 +6,7 @@ import {
   ITransactionRepository, TransactionFilter, PaginatedResult,
 } from '../../domain/repositories/transaction.repository.interface';
 import { Transaction, TransactionType } from '../../domain/entities/transaction.entity';
+import { convertDatesToStrings, convertStringsToDate } from '../../common/utils/date-mapper.util';
 
 @Injectable()
 export class TransactionRepository implements ITransactionRepository {
@@ -17,6 +18,9 @@ export class TransactionRepository implements ITransactionRepository {
   private toModel(e: TransactionEntity): Transaction {
     const t = new Transaction();
     Object.assign(t, e);
+    // Convert date strings back to Date objects for proper JSON serialization
+    const converted = convertStringsToDate(t, ['date', 'dueDate'] as any);
+    Object.assign(t, converted);
     return t;
   }
 
@@ -62,13 +66,15 @@ export class TransactionRepository implements ITransactionRepository {
   }
 
   async save(data: Partial<Transaction>): Promise<Transaction> {
-    const entity = this.repo.create(data as Partial<TransactionEntity>);
+    const converted = convertDatesToStrings(data, ['date', 'dueDate'] as any);
+    const entity = this.repo.create(converted as Partial<TransactionEntity>);
     const saved  = await this.repo.save(entity);
     return this.toModel(saved);
   }
 
   async update(id: string, data: Partial<Transaction>): Promise<Transaction> {
-    await this.repo.update(id, data as Partial<TransactionEntity>);
+    const converted = convertDatesToStrings(data, ['date', 'dueDate'] as any);
+    await this.repo.update(id, converted as Partial<TransactionEntity>);
     return (await this.findById(id)) as Transaction;
   }
 

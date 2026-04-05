@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* Tailwind v4: dark mode via class (substitui darkMode: 'class' do tailwind.config.js) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+* {
+  @apply box-border;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply text-gray-900 dark:text-gray-100;
+}
+
+.dark {
+  @apply bg-gray-950 text-gray-100;
+}
+

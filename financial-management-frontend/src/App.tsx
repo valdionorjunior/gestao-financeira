@@ -1,9 +1,10 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { ProtectedLayout } from './app/components/ProtectedLayout';
 import { ErrorBoundary } from './app/components/ErrorBoundary';
+import { useThemeStore } from './app/stores/theme.store';
 
 const LoginPage          = lazy(() => import('./app/pages/LoginPage'));
 const RegisterPage       = lazy(() => import('./app/pages/RegisterPage'));
@@ -26,6 +27,12 @@ const AppLoader = () => (
 );
 
 function App() {
+  const isDark = useThemeStore(s => s.isDark);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
+  }, [isDark]);
+
   return (
     <QueryClientProvider client={qc}>
       <BrowserRouter>

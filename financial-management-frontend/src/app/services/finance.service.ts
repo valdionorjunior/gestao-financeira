@@ -19,6 +19,13 @@ export const categoriesService = {
   create: (body: any)     => api.post<Category>('/categories', body).then(r => r.data),
   update: (id: string, body: any) => api.put<Category>(`/categories/${id}`, body).then(r => r.data),
   remove: (id: string)    => api.delete(`/categories/${id}`),
+  // Subcategories
+  createSubcategory: (categoryId: string, body: any) =>
+    api.post(`/categories/${categoryId}/subcategories`, body),
+  updateSubcategory: (categoryId: string, subcategoryId: string, body: any) =>
+    api.put(`/categories/${categoryId}/subcategories/${subcategoryId}`, body),
+  removeSubcategory: (categoryId: string, subcategoryId: string) =>
+    api.delete(`/categories/${categoryId}/subcategories/${subcategoryId}`),
 };
 
 // ── Transactions ──────────────────────────────────────────────
@@ -27,8 +34,10 @@ export const transactionsService = {
     api.get<PaginatedResult<Transaction>>('/transactions', { params }).then(r => r.data),
   getOne: (id: string) =>
     api.get<Transaction>(`/transactions/${id}`).then(r => r.data),
-  create: (body: any) =>
-    api.post<Transaction>('/transactions', body).then(r => r.data),
+  create: (body: any) => {
+    const endpoint = body.type === 'TRANSFER' ? '/transactions/transfer' : '/transactions'
+    return api.post<Transaction>(endpoint, body).then(r => r.data)
+  },
   createTransfer: (body: any) =>
     api.post('/transactions/transfer', body).then(r => r.data),
   update: (id: string, body: any) =>

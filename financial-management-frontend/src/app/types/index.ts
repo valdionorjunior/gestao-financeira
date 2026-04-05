@@ -52,6 +52,7 @@ export interface Transaction {
   accountId: string;
   categoryId?: string;
   subcategoryId?: string;
+  destinationAccountId?: string;
   tags?: string[];
 }
 

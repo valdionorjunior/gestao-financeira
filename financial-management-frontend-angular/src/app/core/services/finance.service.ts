@@ -63,7 +63,10 @@ export class FinanceService {
     return this.http.get<PaginatedResult<Transaction>>(`${this.api}/transactions`, { params });
   }
   getTransaction(id: string)                    { return this.http.get<Transaction>(`${this.api}/transactions/${id}`); }
-  createTransaction(b: Partial<Transaction>)    { return this.http.post<Transaction>(`${this.api}/transactions`, b); }
+  createTransaction(b: Partial<Transaction>)    {
+    const endpoint = b.type === 'TRANSFER' ? '/transactions/transfer' : '/transactions'
+    return this.http.post<Transaction>(`${this.api}${endpoint}`, b);
+  }
   updateTransaction(id: string, b: Partial<Transaction>) { return this.http.put<Transaction>(`${this.api}/transactions/${id}`, b); }
   deleteTransaction(id: string)                 { return this.http.delete<void>(`${this.api}/transactions/${id}`); }
 

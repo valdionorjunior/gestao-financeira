@@ -1,13 +1,25 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Plus, ArrowDownCircle, ArrowUpCircle, ArrowLeftRight, Trash2, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Plus, ArrowDownCircle, ArrowUpCircle, ArrowLeftRight, Trash2, Pencil, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { transactionsService, accountsService, categoriesService } from '../services/finance.service';
+import { TransactionModal } from '../components/TransactionModal';
 import type { Transaction } from '../types';
 
 const fmtBRL  = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('pt-BR');
+const fmtDate = (d: string) => {
+  const dateMatch = d.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (dateMatch) {
+    const [, year, month, day] = dateMatch
+    // Use UTC to avoid timezone shift
+    const dateObj = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day)))
+    const y = dateObj.getUTCFullYear()
+    const m = String(dateObj.getUTCMonth() + 1).padStart(2, '0')
+    const day_str = String(dateObj.getUTCDate()).padStart(2, '0')
+    return `${day_str}/${m}/${y}`
+  }
+  return new Date(d).toLocaleDateString('pt-BR')
+};
 
 const TX_TYPE_LABEL: Record<string, string> = {
   INCOME:   'Receita',
@@ -31,17 +43,22 @@ export default function TransactionsPage() {
   const [page, setPage]       = useState(1);
   const [type, setType]       = useState('');
   const [modal, setModal]     = useState(false);
+  const [editingTx, setEditingTx] = useState<Partial<Transaction> | undefined>();
 
   const params = { page, limit: 20, ...(type ? { type } : {}) };
   const { data, isLoading } = useQuery({ queryKey: ['transactions', params], queryFn: () => transactionsService.list(params) });
   const { data: accounts = [] } = useQuery({ queryKey: ['accounts'], queryFn: accountsService.list });
   const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => categoriesService.list() });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<any>();
-
   const createMut = useMutation({
     mutationFn: transactionsService.create,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['transactions'] }); qc.invalidateQueries({ queryKey: ['accounts'] }); toast.success('Transação criada!'); setModal(false); reset(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['transactions'] }); qc.invalidateQueries({ queryKey: ['accounts'] }); toast.success('Transação criada!'); setModal(false); setEditingTx(undefined); },
+    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Erro.'),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: any }) => transactionsService.update(id, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['transactions'] }); qc.invalidateQueries({ queryKey: ['accounts'] }); toast.success('Transação atualizada!'); setModal(false); setEditingTx(undefined); },
     onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Erro.'),
   });
 
@@ -50,7 +67,25 @@ export default function TransactionsPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['transactions'] }); qc.invalidateQueries({ queryKey: ['accounts'] }); toast.success('Removida.'); },
   });
 
-  const onSubmit = (data: any) => createMut.mutate(data);
+  const handleOpenModal = (tx?: Transaction) => {
+    setEditingTx(tx);
+    setModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setModal(false);
+    setEditingTx(undefined);
+  };
+
+  const handleSaveTransaction = (data: any) => {
+    if (editingTx?.id) {
+      // UpdateTransactionDto: apenas estes campos são permitidos no PUT
+      const { description, amount, date, dueDate, status, categoryId, subcategoryId, notes, tags } = data;
+      updateMut.mutate({ id: editingTx.id, body: { description, amount, date, dueDate, status, categoryId, subcategoryId, notes, tags } });
+    } else {
+      createMut.mutate(data);
+    }
+  };
 
   const transactions: Transaction[] = data?.data ?? [];
   const total      = data?.total ?? 0;
@@ -78,7 +113,7 @@ export default function TransactionsPage() {
               <option value="TRANSFER">Transferência</option>
             </select>
           </div>
-          <button onClick={() => { reset(); setModal(true); }} className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:opacity-90 transition">
+          <button onClick={() => handleOpenModal()} className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:opacity-90 transition">
             <Plus className="w-4 h-4" /> Nova
           </button>
         </div>
@@ -119,9 +154,14 @@ export default function TransactionsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => { if (confirm('Excluir?')) deleteMut.mutate(tx.id); }} className="p-1.5 rounded hover:bg-red-50 transition">
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => handleOpenModal(tx)} className="p-1.5 rounded hover:bg-blue-50 transition" title="Editar transação">
+                        <Pencil className="w-4 h-4 text-blue-400" />
+                      </button>
+                      <button onClick={() => { if (confirm('Excluir esta transação?')) deleteMut.mutate(tx.id); }} className="p-1.5 rounded hover:bg-red-50 transition" title="Excluir transação">
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -142,52 +182,14 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      {/* New Transaction Modal */}
-      {modal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) { setModal(false); reset(); } }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-5">Nova Transação</h2>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Tipo *</label>
-                <select {...register('type', { required: true })} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                  {TX_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Conta *</label>
-                <select {...register('accountId', { required: true })} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                  <option value="">Selecione a conta</option>
-                  {accounts.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Categoria</label>
-                <select {...register('categoryId')} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                  <option value="">Sem categoria</option>
-                  {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Descrição *</label>
-                <input {...register('description', { required: 'Obrigatório' })} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Valor *</label>
-                <input type="number" step="0.01" {...register('amount', { required: 'Obrigatório', valueAsNumber: true })} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Data *</label>
-                <input type="date" {...register('date', { required: 'Obrigatório' })} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => { setModal(false); reset(); }} className="flex-1 border border-gray-300 text-gray-700 font-semibold py-2.5 rounded-lg hover:bg-gray-50 transition text-sm">Cancelar</button>
-                <button type="submit" className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold py-2.5 rounded-lg hover:opacity-90 transition text-sm">Criar</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Transaction Modal */}
+      <TransactionModal
+        open={modal}
+        onClose={handleCloseModal}
+        onSubmit={handleSaveTransaction}
+        isLoading={createMut.isPending || updateMut.isPending}
+        editingTransaction={editingTx}
+      />
     </div>
   );
 }

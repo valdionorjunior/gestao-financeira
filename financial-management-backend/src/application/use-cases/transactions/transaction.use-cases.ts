@@ -10,6 +10,7 @@ import { TransactionType, TransactionStatus } from '../../../domain/entities/tra
 import {
   CreateTransactionDto, UpdateTransactionDto, ListTransactionsDto,
 } from '../../dtos/transactions/transaction.dto';
+import { parseDateString } from '../../../common/utils/date.utils';
 
 // ─── Create ──────────────────────────────────────────────────────────────────
 
@@ -27,8 +28,10 @@ export class CreateTransactionUseCase {
     if (!account) throw new NotFoundException('Conta não encontrada');
     if (!account.isOwnedBy(userId)) throw new ForbiddenException('Sem permissão sobre a conta');
 
+    // Transferências devem ser criadas via CreateTransferUseCase
+    // Este validador é redundante agora, mas mantém compatibilidade
     if (dto.type === TransactionType.TRANSFER) {
-      throw new BadRequestException('Use o endpoint /transactions/transfer para transferências');
+      throw new BadRequestException('Transferências devem ser criadas com todos os campos obrigatórios (type, accountId, destinationAccountId, amount, description, date)');
     }
 
     const balanceDelta = dto.type === TransactionType.INCOME ? dto.amount : -dto.amount;
@@ -43,8 +46,8 @@ export class CreateTransactionUseCase {
       amount: dto.amount,
       description: dto.description,
       notes: dto.notes,
-      date: new Date(dto.date),
-      dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+      date: parseDateString(dto.date),
+      dueDate: dto.dueDate ? parseDateString(dto.dueDate) : undefined,
       isRecurring: dto.isRecurring ?? false,
       recurrenceRule: dto.recurrenceRule,
       tags: dto.tags,
@@ -87,7 +90,7 @@ export class CreateTransferUseCase {
     if (!origin.isOwnedBy(userId)) throw new ForbiddenException('Sem permissão sobre conta origem');
 
     const transferPairId = uuidv4();
-    const date = new Date(dto.date);
+    const date = parseDateString(dto.date);
 
     const [debit, credit] = await Promise.all([
       this.transactionRepo.save({
@@ -121,7 +124,7 @@ export class CreateTransferUseCase {
       this.accountRepo.updateBalance(dto.destinationAccountId!, dto.amount),
     ]);
 
-    return { debit, credit, transferPairId };
+    return debit;
   }
 }
 
@@ -154,8 +157,8 @@ export class UpdateTransactionUseCase {
       amount:        dto.amount,
       description:   dto.description,
       notes:         dto.notes,
-      date:          dto.date ? new Date(dto.date) : undefined,
-      dueDate:       dto.dueDate ? new Date(dto.dueDate) : undefined,
+      date:          dto.date ? parseDateString(dto.date) : undefined,
+      dueDate:       dto.dueDate ? parseDateString(dto.dueDate) : undefined,
       status:        dto.status,
       tags:          dto.tags,
     });
@@ -222,8 +225,8 @@ export class ListTransactionsUseCase {
       categoryId:  dto.categoryId,
       type:        dto.type,
       status:      dto.status,
-      startDate:   dto.startDate  ? new Date(dto.startDate)  : undefined,
-      endDate:     dto.endDate    ? new Date(dto.endDate)    : undefined,
+      startDate:   dto.startDate  ? parseDateString(dto.startDate)  : undefined,
+      endDate:     dto.endDate    ? parseDateString(dto.endDate)    : undefined,
       description: dto.description,
       page:        dto.page  ?? 1,
       limit:       dto.limit ?? 20,
