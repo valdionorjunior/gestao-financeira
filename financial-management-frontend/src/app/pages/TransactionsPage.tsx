@@ -183,7 +183,9 @@ export default function TransactionsPage() {
       )}
 
       {/* Transaction Modal */}
+      {/* key forces a fresh instance on every open, preventing stale form data from a previous create/edit */}
       <TransactionModal
+        key={modal ? (editingTx?.id ?? 'new') : 'closed'}
         open={modal}
         onClose={handleCloseModal}
         onSubmit={handleSaveTransaction}
